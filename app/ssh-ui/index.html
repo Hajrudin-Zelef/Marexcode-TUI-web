@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SSH — Marexcode</title>
+<link rel="stylesheet" href="/vendor/xterm.css">
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--fg:#e6edf3;--muted:#8b949e;--accent:#3fb950}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px;overflow:hidden}
+  body{display:flex;flex-direction:column;padding:12px;gap:10px}
+  h1{font-size:12px;letter-spacing:2px;color:var(--muted);font-weight:600}
+  .hidden{display:none !important}
+  form{display:flex;flex-direction:column;gap:10px;overflow:auto;min-height:0}
+  .grid{display:grid;grid-template-columns:2fr 1fr 1.2fr;gap:8px}
+  @media (max-width:640px){.grid{grid-template-columns:1fr 1fr}.grid label:nth-child(3){grid-column:1 / -1}}
+  label{display:block;font-size:11.5px;color:var(--muted)}
+  input,select,textarea{width:100%;margin-top:4px;background:#000;border:1px solid var(--border);border-radius:6px;color:var(--fg);padding:8px 9px;font-size:13px;font-family:inherit}
+  textarea{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;resize:vertical}
+  .btn{background:transparent;border:1px solid var(--border);color:var(--fg);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12.5px;white-space:nowrap}
+  .btn:hover{border-color:var(--accent);color:#fff}
+  .btn:disabled{opacity:.5;cursor:default}
+  .primary{background:#12341c;border-color:var(--accent);color:#fff}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .note{font-size:11.5px;color:var(--muted);line-height:1.5}
+  .err{color:#f85149}
+  .warn{color:#d29922}
+  .ok{color:var(--accent)}
+  #status{font-size:12px;color:var(--muted);min-height:16px}
+  #tabs{display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:6px}
+  .tab{background:transparent;border:1px solid var(--border);color:var(--fg);border-radius:6px 6px 0 0;padding:6px 12px;cursor:pointer;font-size:12.5px}
+  .tab.active{background:#12341c;border-color:var(--accent);color:#fff}
+  #views{flex:1;min-height:0;display:flex;flex-direction:column}
+  #term{flex:1;min-height:0;background:#000;padding:4px;border:1px solid var(--border);border-radius:6px;display:none}
+  #term.on{display:block}
+  #term .xterm{height:100%}
+  #term .xterm-viewport{background:#000 !important}
+  #sftp{flex:1;min-height:0;display:none;flex-direction:column;gap:6px}
+  #sftp.on{display:flex}
+  .sf-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  #sfPath{flex:1 1 220px;margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+  #sfMsg{min-height:16px}
+  .sf-list{flex:1;min-height:0;overflow:auto;border:1px solid var(--border);border-radius:6px;background:#0b0f14}
+  .sf-row{display:grid;grid-template-columns:22px minmax(120px,1fr) 78px 92px auto;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid #161b22;cursor:default}
+  .sf-row:hover{background:#111823}
+  .sf-row.dir{cursor:pointer}
+  .sf-ic{color:var(--muted);text-align:center}
+  .sf-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sf-name.dir{color:#79c0ff}
+  .sf-size,.sf-date{color:var(--muted);font-size:11.5px;white-space:nowrap}
+  .sf-actions{display:flex;gap:4px;justify-content:flex-end}
+  .sf-actions button{background:transparent;border:0;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 4px}
+  .sf-actions button:hover{color:#fff}
+  .sf-preview{flex:1;min-height:0;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#000}
+  .sf-preview-head{display:flex;align-items:center;gap:8px;padding:5px 8px;border-bottom:1px solid var(--border);background:var(--panel)}
+  .sf-preview-head span{flex:1;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #sfPreviewText{flex:1;overflow:auto;padding:10px 12px;font-size:12.5px;line-height:1.5;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+  #sfPreviewImg{max-width:100%;max-height:100%;object-fit:contain;margin:auto}
+  .drop{border-color:var(--accent) !important}
+  @media (max-width:640px){
+    body{padding:8px}
+    .sf-row{grid-template-columns:20px minmax(80px,1fr) 60px auto}
+    .sf-date{display:none}
+    .sf-actions button{font-size:15px}
+  }
+
+/* ---- langage visuel Marexcode premium ---- */
+:root{color-scheme:dark;--bg:#090d0a;--panel:#111713;--border:rgba(185,211,192,.14);--fg:#e7eee9;--muted:#89978e;--accent:#a6e3b2;--accent-dim:rgba(104,177,126,.14);--raised:#151d18}
+html,body{background:radial-gradient(ellipse at 50% -25%,rgba(76,125,88,.17),transparent 58%),var(--bg);color:var(--fg);font-size:13px}
+body{padding:22px;gap:13px}
+h1{display:flex;align-items:center;gap:10px;font-size:10px;letter-spacing:2.1px;color:#a7b5ab;font-weight:700}
+h1:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 13px rgba(166,227,178,.7)}
+form{width:min(820px,100%);align-self:center;margin:auto;padding:24px;border:1px solid var(--border);border-radius:14px;background:linear-gradient(150deg,rgba(20,28,23,.98),rgba(13,18,15,.98));box-shadow:0 24px 70px rgba(0,0,0,.28)}
+.grid{gap:12px}
+label{color:#a4b1a8;font-size:11px;letter-spacing:.015em}
+input,select,textarea{margin-top:6px;background:#090d0a;border:1px solid rgba(185,211,192,.16);border-radius:8px;color:#e7eee9;padding:10px 11px;font-size:13px;transition:border-color .18s,box-shadow .18s,background .18s}
+input:hover,select:hover,textarea:hover{border-color:rgba(185,211,192,.3)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:rgba(166,227,178,.68);box-shadow:0 0 0 3px rgba(166,227,178,.1);background:#0b100c}
+textarea{line-height:1.5}
+.btn{background:rgba(255,255,255,.02);border:1px solid rgba(185,211,192,.15);color:#c5d0c8;border-radius:8px;padding:8px 12px;font-size:12px;transition:background .18s,border-color .18s,color .18s,transform .18s}
+.btn:hover{border-color:rgba(166,227,178,.48);background:rgba(166,227,178,.07);color:#f3fff5;transform:translateY(-1px)}
+.btn:focus-visible,.tab:focus-visible{outline:2px solid rgba(166,227,178,.72);outline-offset:2px}
+.btn:disabled{transform:none}
+.primary{background:linear-gradient(135deg,#a6e3b2,#75bf8a);border:0;color:#09140c;font-weight:700;padding:10px 18px;box-shadow:0 7px 22px rgba(103,185,127,.17)}
+.primary:hover{background:linear-gradient(135deg,#b8edc2,#88d09a);color:#071009}
+.row{margin-top:2px}
+.note{font-size:11px;color:#89978e;line-height:1.7}
+#status{min-height:18px;padding-top:1px;font-size:11.5px}
+.err{color:#ff8c83}.warn{color:#edc778}.ok{color:#a6e3b2}
+#tabs{min-height:48px;gap:7px;padding:5px 5px 8px;border-bottom:1px solid var(--border)}
+.tab{background:rgba(255,255,255,.02);border:1px solid var(--border);color:#99a79e;border-radius:8px;padding:8px 15px;font-size:12px}
+.tab.active{background:var(--accent-dim);border-color:rgba(166,227,178,.38);color:#d9f6df}
+#term{background:#090c0a;border:1px solid var(--border);border-radius:11px;padding:7px}
+#term .xterm-viewport{background:#090c0a!important}
+#sftp{gap:8px}
+.sf-bar{gap:7px}
+#sfPath{background:#0b100c;font-size:11.5px}
+#sfMsg{min-height:16px;padding:0 2px}
+.sf-list{border:1px solid var(--border);border-radius:11px;background:rgba(13,18,15,.96);overflow:auto}
+.sf-row{min-height:39px;padding:7px 12px;border-bottom:1px solid rgba(185,211,192,.07);transition:background .15s}
+.sf-row:hover{background:rgba(166,227,178,.055)}
+.sf-name.dir{color:#a6e3b2}
+.sf-size,.sf-date{color:#89978e;font-size:10.5px}
+.sf-actions button{border-radius:5px;padding:4px 6px}
+.sf-actions button:hover{background:rgba(166,227,178,.1);color:#d8f3de}
+.sf-preview{border:1px solid var(--border);border-radius:11px;background:#090c0a}
+.sf-preview-head{min-height:44px;padding:7px 10px;background:#141b17;border-bottom:1px solid var(--border)}
+.sf-preview-head span{color:#e0eae3}
+#sfPreviewText{color:#d5e0d8;line-height:1.65}
+.drop{border-color:var(--accent)!important;box-shadow:inset 0 0 0 1px rgba(166,227,178,.25);background:rgba(166,227,178,.04)!important}
+.hidden{display:none!important}
+@media(max-width:700px){
+ body{padding:12px;gap:10px}
+ form{padding:18px;border-radius:12px}
+ .grid{grid-template-columns:1fr 1fr;gap:10px}
+ .grid label:nth-child(3){grid-column:1/-1}
+ #tabs{gap:5px}
+ .tab{padding:8px 11px}
+ #connInfo{flex-basis:100%;order:3}
+ #disconnect{margin-left:auto}
+ .sf-bar{gap:5px}
+ #sfPath{flex-basis:100%;order:2}
+ #sfRoot{order:3}
+ #sfMkdir{order:4}
+ .sf-row{grid-template-columns:20px minmax(80px,1fr) 60px auto;gap:5px;padding:7px 8px}
+ .sf-date{display:none}
+ .sf-actions button{padding:4px 5px}
+}
+@media(max-width:390px){body{padding:8px}.grid{grid-template-columns:1fr 1fr}form{padding:14px}.sf-row{grid-template-columns:18px minmax(65px,1fr) 52px auto;font-size:11px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+
+
+/* ---- boîte de connexion en modal ---- */
+html,body{background:#080b09}
+body{padding:0;gap:0}
+.connect-layer{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:26px;background:rgba(3,6,4,.78);backdrop-filter:blur(14px)}
+.connect-dialog{width:min(570px,100%);max-height:min(90vh,780px);overflow:auto;border:1px solid rgba(185,211,192,.18);border-radius:18px;background:linear-gradient(155deg,#151d18,#0e1310 74%);box-shadow:0 32px 110px rgba(0,0,0,.72),0 0 75px rgba(102,177,120,.07);animation:modal-enter .24s cubic-bezier(.2,.75,.25,1) both}
+@keyframes modal-enter{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+.connect-head{display:flex;align-items:flex-start;gap:13px;padding:23px 25px 18px;border-bottom:1px solid rgba(185,211,192,.1)}
+.connect-icon{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:12px;color:#b6edc1;background:rgba(166,227,178,.1);border:1px solid rgba(166,227,178,.2)}
+.connect-heading{min-width:0}
+.connect-eyebrow{margin:2px 0 5px;color:#9cc8a5;font-size:9px;font-weight:750;letter-spacing:1.55px}
+.connect-head h1{font-size:19px;line-height:1.25;letter-spacing:-.025em;color:#eff6f0;font-weight:650}
+.connect-subtitle{margin-top:5px;color:#91a097;font-size:11.5px;line-height:1.55}
+.connect-dialog form{width:auto;margin:0;padding:20px 25px 23px;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible;gap:13px}
+.connect-dialog .grid{grid-template-columns:minmax(0,1.55fr) minmax(86px,.72fr) minmax(110px,.95fr);gap:10px}
+.connect-dialog label{font-size:10.5px}
+.connect-dialog input,.connect-dialog select,.connect-dialog textarea{margin-top:5px;padding:9px 10px;font-size:12px;border-radius:7px}
+.connect-dialog textarea{min-height:100px;resize:vertical}
+.connect-dialog .row{margin-top:1px}
+.connect-dialog .primary{min-width:122px;justify-content:center}
+.connect-dialog .note{padding-top:1px;font-size:10.5px;line-height:1.65}
+.connect-dialog #status{border-radius:6px}
+.connect-layer.hidden{display:none!important}
+body:has(#tabs:not(.hidden)){padding:12px;gap:10px;background:radial-gradient(ellipse at 50% -25%,rgba(76,125,88,.13),transparent 58%),#090d0a}
+@media(max-width:640px){
+ .connect-layer{padding:14px}
+ .connect-dialog{max-height:calc(100dvh - 28px);border-radius:15px}
+ .connect-head{padding:18px 18px 15px}
+ .connect-icon{width:38px;height:38px;flex-basis:38px}
+ .connect-dialog form{padding:17px 18px 19px;gap:11px}
+ .connect-dialog .grid{grid-template-columns:minmax(0,1fr) 88px;gap:9px}
+ .connect-dialog .grid label:nth-child(3){grid-column:1/-1}
+ .connect-dialog textarea{min-height:84px}
+}
+@media(max-width:380px){.connect-dialog .grid{grid-template-columns:1fr 78px}.connect-dialog form{padding:15px}.connect-head{padding:16px 15px 13px}.connect-subtitle{font-size:10.5px}}
+@media(prefers-reduced-motion:reduce){.connect-dialog{animation:none}}
+
+
+/* Intégré au portail, la fenêtre parente fournit déjà l’arrière-plan modal. */
+body.embedded{padding:0;gap:0;background:#090d0a}
+body.embedded .connect-layer{position:relative;inset:auto;z-index:auto;flex:1;min-height:0;padding:14px 22px;background:transparent;backdrop-filter:none}
+body.embedded .connect-dialog{width:min(700px,100%);max-height:100%;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:auto;animation:none}
+body.embedded:not(:has(#tabs:not(.hidden))) #views{display:none}
+body.embedded .connect-head{display:none}
+body.embedded .connect-dialog form{padding:12px 18px 18px}
+body.embedded:has(#tabs:not(.hidden)){padding:12px;gap:10px}
+@media(max-width:640px){body.embedded .connect-layer{padding:8px}body.embedded .connect-dialog form{padding:8px 10px 14px}}
+
+</style>
+</head>
+<body>
+<div class="connect-layer" id="connectLayer">
+  <section class="connect-dialog" role="dialog" aria-modal="true" aria-labelledby="sshDialogTitle">
+    <div class="connect-head">
+      <span class="connect-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m7 9 3 3-3 3M13 15h4"/></svg></span>
+      <div class="connect-heading"><div class="connect-eyebrow">ACCÈS DISTANT SÉCURISÉ</div><h1 id="sshDialogTitle">Connexion SSH</h1><p class="connect-subtitle">Renseignez les paramètres du serveur pour ouvrir une session.</p></div>
+    </div>
+    <form id="form" autocomplete="off">
+  <div class="grid">
+    <label>Hôte / IP<input id="host" placeholder="10.0.0.105" required></label>
+    <label>Port<input id="port" type="number" min="1" max="65535" value="22" required></label>
+    <label>Utilisateur<input id="user" placeholder="sam" required></label>
+  </div>
+  <label>Authentification
+    <select id="auth">
+      <option value="key">Clé SSH (recommandé)</option>
+      <option value="password">Mot de passe</option>
+    </select>
+  </label>
+  <label id="keyRow">Clé privée (OpenSSH ou PEM)
+    <textarea id="key" rows="5" spellcheck="false" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea>
+  </label>
+  <label id="passRow" class="hidden">Mot de passe
+    <input id="pass" type="password" autocomplete="off">
+  </label>
+  <label id="passphraseRow">Phrase de passe de la clé (optionnel)
+    <input id="passphrase" type="password" autocomplete="off">
+  </label>
+  <div class="row">
+    <button type="submit" class="btn primary" id="go">Connecter</button>
+  </div>
+  <div class="note">Destinations : tailnet (100.64.0.0/10), 10.0.0.0/24, 192.168.1.0/24 · ports 22/2222.<br>
+  Aucun identifiant n’est stocké : mot de passe et clé restent en mémoire le temps de la session.</div>
+  <div id="status" role="status"></div>
+</form>
+  </section>
+</div>
+
+<div id="tabs" class="hidden">
+  <button class="tab active" id="tabTerm">Terminal</button>
+  <button class="tab" id="tabFiles">Fichiers</button>
+  <span style="flex:1"></span>
+  <span class="note" id="connInfo"></span>
+  <button class="btn" id="disconnect">Déconnecter</button>
+</div>
+
+<div id="views">
+  <div id="term"></div>
+  <div id="sftp">
+    <div class="sf-bar">
+      <button class="btn" id="sfHome" title="Retour au home">Home</button>
+      <button class="btn" id="sfUp" title="Dossier parent">↑</button>
+      <input id="sfPath" readonly>
+      <button class="btn" id="sfRefresh" title="Rafraîchir">⟳</button>
+      <button class="btn" id="sfRoot">Afficher la racine</button>
+      <button class="btn" id="sfMkdir">Nouveau dossier</button>
+      <label class="btn">Importer<input id="sfUpload" type="file" multiple hidden></label>
+    </div>
+    <div id="sfMsg" class="note" role="status"></div>
+    <div id="sfList" class="sf-list"></div>
+    <div id="sfPreview" class="sf-preview hidden">
+      <div class="sf-preview-head">
+        <span id="sfPreviewName"></span>
+        <a class="btn" id="sfPreviewDl" href="#" download>Télécharger</a>
+        <button class="btn" id="sfPreviewClose">✕</button>
+      </div>
+      <pre id="sfPreviewText"></pre>
+      <img id="sfPreviewImg" class="hidden" alt="">
+    </div>
+  </div>
+</div>
+
+<script src="/vendor/xterm.js"></script>
+<script src="/vendor/addon-fit.js"></script>
+<script src="/ssh-ui/app.js"></script>
+</body>
+</html>

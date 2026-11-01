@@ -1,0 +1,9 @@
+/var/lib/marexgate/audit.jsonl {
+    weekly
+    rotate 8
+    compress
+    missingok
+    notifempty
+    copytruncate
+    su marexgate marexgate
+}

@@ -1,0 +1,37 @@
+#!/bin/sh
+set -e
+NODE=/usr/bin/node
+CLI=/opt/marexgate/cli.js
+
+if [ "$(id -u)" -ne 0 ]; then
+  exec /bin/sudo -- /usr/local/bin/marexgate "$@"
+fi
+
+restore_echo() { stty echo 2>/dev/null || true; }
+trap restore_echo EXIT INT TERM
+
+if [ "$1" = "passwd" ]; then
+  while :; do
+    printf '\nNouveau mot de passe maître (12 caractères min) : ' >&2
+    stty -echo 2>/dev/null || true
+    read -r P || true
+    restore_echo
+    printf '\n' >&2
+    [ ${#P} -ge 12 ] && break
+    printf '12 caractères minimum.\n' >&2
+  done
+  printf 'Confirmer : ' >&2
+  stty -echo 2>/dev/null || true
+  read -r P2 || true
+  restore_echo
+  printf '\n' >&2
+  if [ "$P" != "$P2" ]; then
+    printf 'Les mots de passe diffèrent.\n' >&2
+    exit 1
+  fi
+  printf '%s' "$P" | /bin/setpriv --reuid=marexgate --regid=marexgate --init-groups "$NODE" "$CLI" passwd
+  unset P P2
+  exit 0
+fi
+
+exec /bin/setpriv --reuid=marexgate --regid=marexgate --init-groups "$NODE" "$CLI" "$@"

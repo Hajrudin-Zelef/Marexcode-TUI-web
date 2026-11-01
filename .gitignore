@@ -1,0 +1,19 @@
+# Secrets, données et binaires — jamais versionnés
+ForkOffline/
+deps/
+node_modules/
+*.db
+*.db-wal
+*.db-shm
+*.tar
+*.tar.gz
+*.tar.zst
+*.tgz
+backups/
+STATE.txt
+*.log
+.env
+*.key
+*.pem
+.DS_Store
+prive/

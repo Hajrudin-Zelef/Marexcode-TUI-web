@@ -1,0 +1,14 @@
+/* MarexFile — monogramme visible même dans un panneau étroit */
+header > img {
+  display: block !important;
+  height: 22px;
+  width: 22px;
+  object-fit: contain;
+  margin: 0 6px 0 2px;
+  border-radius: 5px;
+  flex: 0 0 22px;
+}
+@media (max-width: 420px) {
+  header { gap: 2px; }
+  header .action span { display: none; }
+}

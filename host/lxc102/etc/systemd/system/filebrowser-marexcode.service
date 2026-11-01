@@ -1,0 +1,14 @@
+[Unit]
+Description=File Browser (Marexcode Web, base /browser)
+After=network.target
+
+[Service]
+User=sam
+Group=sam
+WorkingDirectory=/home/sam
+ExecStart=/usr/local/bin/filebrowser -b /browser -r /home/sam -p 8082 -a 127.0.0.1 --noauth -d /home/sam/.filebrowser.db --disableThumbnails --disableImageResolutionCalc
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

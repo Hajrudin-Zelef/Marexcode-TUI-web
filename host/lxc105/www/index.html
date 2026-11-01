@@ -1,0 +1,3835 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="theme-color" content="#080b0a"/>
+<title>Marexcode Web</title>
+<style>
+:root{
+  --bg:#000; --panel:#0d1117; --border:#1c2530; --fg:#c9d1d9;
+  --accent:#3fb950; --accent-dim:#12341c; --muted:#8b949e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;height:100dvh;background:var(--bg);color:var(--fg);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  overflow:hidden;font-size:14px;
+  -webkit-text-size-adjust:100%;text-size-adjust:100%;overscroll-behavior:none}
+body{display:flex;flex-direction:column;height:var(--app-h,100dvh)}
+/* ---- barre du haut ---- */
+header{display:flex;align-items:center;gap:8px;padding:6px 12px;
+  background:var(--panel);border-bottom:1px solid var(--border);
+  height:46px;flex:0 0 auto;flex-wrap:nowrap}
+.hdr-more{display:contents}
+.only-mobile{display:none!important}
+header .logo{font-weight:700;letter-spacing:5px;font-size:13px;white-space:nowrap}
+header .logo span{color:var(--accent)}
+header .spacer{flex:1}
+.btn{background:transparent;border:1px solid var(--border);color:var(--fg);
+  border-radius:6px;padding:5px 10px;cursor:pointer;font-size:13px;white-space:nowrap;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.btn:hover{border-color:var(--accent);color:#fff}
+.btn.active{background:var(--accent-dim);border-color:var(--accent);color:#fff}
+/* ---- zone principale ---- */
+#main{flex:1;display:flex;min-height:0}
+#files{width:320px;flex:0 0 auto;border-right:1px solid var(--border);
+  display:flex;flex-direction:column;min-width:0;background:var(--panel)}
+#files.hidden{display:none}
+.hidden{display:none!important}
+.pane-title{padding:6px 10px;font-size:11px;text-transform:uppercase;
+  letter-spacing:1.5px;color:var(--muted);border-bottom:1px solid var(--border);
+  flex:0 0 auto}
+#center{flex:1;display:flex;flex-direction:column;min-width:0;background:#000}
+#tabbar{display:flex;align-items:center;gap:4px;background:var(--panel);
+  border-bottom:1px solid var(--border);padding:4px 8px 0;flex:0 0 auto;
+  overflow-x:auto;white-space:nowrap}
+.tab{padding:6px 14px;border:1px solid transparent;border-bottom:0;
+  border-radius:6px 6px 0 0;cursor:pointer;font-size:13px;color:var(--muted);
+  background:transparent}
+.tab:hover{color:var(--fg)}
+.tab.active{color:#fff;border-color:var(--border);background:#000}
+#termwrap{flex:1;position:relative;min-height:0;background:#000}
+iframe{border:0;width:100%;height:100%;display:block;background:#000}
+#termwrap iframe{position:absolute;inset:0;display:none}
+#termwrap iframe.active{display:block}
+#filesFrame{flex:1;min-height:0}
+/* ---- barre de monitoring (une seule ligne) ---- */
+#monitor{flex:0 0 auto;border-top:1px solid var(--border);background:var(--panel)}
+#monitor.hidden{display:none}
+#monbar{display:flex;align-items:center;padding:5px 10px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:11.5px;color:var(--muted);white-space:nowrap;overflow-x:auto;
+  scrollbar-width:thin;line-height:1.2}
+#monbar b{color:var(--fg);font-weight:600}
+#monbar svg{width:12px;height:12px;vertical-align:-2px;margin-right:4px;opacity:.85}
+#monbar .sep{color:#30363d;padding:0 7px}
+#monbar .hi b{color:#f85149}
+#monbar .warn b{color:#d29922}
+#monbar .err{color:#f85149}
+/* ---- mobile : terminal plein écran, panneaux en overlay ---- */
+@media (max-width: 820px){
+  header{position:relative;z-index:30;padding:4px 8px;gap:6px;height:46px}
+  header .logo{font-size:11px;letter-spacing:3px}
+  .btn{padding:6px 8px;font-size:12px}
+  header .lbl{display:none}
+  header{gap:4px}
+  #files{position:fixed;left:0;right:0;top:46px;bottom:0;width:auto;height:auto;border:0;z-index:20}
+  #filesFrame{height:100%}
+  #monbar{font-size:10.5px;padding:4px 8px}
+}
+/* ---- visionneuse (modal) ---- */
+a.btn{text-decoration:none;display:inline-flex;align-items:center}
+#viewer,#devices,#ssh,#settings{position:fixed;inset:0;z-index:100;display:none;align-items:center;
+  justify-content:center;background:rgba(0,0,0,.75);padding:4vh 4vw}
+#viewer.open,#devices.open,#ssh.open,#settings.open{display:flex}
+#viewer .sheet,#devices .sheet,#ssh .sheet,#settings .sheet{width:min(1100px,100%);height:min(88vh,100%);display:flex;flex-direction:column;
+  background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,.6)}
+#viewer .vhead,#devices .vhead,#ssh .vhead,#settings .vhead{display:flex;align-items:center;gap:8px;padding:8px 12px;
+  border-bottom:1px solid var(--border);flex:0 0 auto;min-width:0}
+#viewer .vname,#devices .vname,#ssh .vname,#settings .vname{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#viewer .vmeta,#devices .vmeta,#ssh .vmeta,#settings .vmeta{color:var(--muted);font-size:11px;white-space:nowrap}
+#viewer .spacer,#devices .spacer,#ssh .spacer,#settings .spacer{flex:1}
+#viewer .vbody,#devices .vbody,#ssh .vbody,#settings .vbody{flex:1;min-height:0;overflow:auto;background:#000;
+  display:flex;align-items:stretch;justify-content:center}
+#viewer .vbody pre{margin:0;padding:14px 16px;font-size:12.5px;line-height:1.5;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color:#e6edf3;white-space:pre-wrap;overflow-wrap:anywhere;tab-size:2;width:100%}
+#viewer .vbody img{max-width:100%;max-height:100%;object-fit:contain;margin:auto;
+  background:repeating-conic-gradient(#161b22 0 25%,#0d1117 0 50%) 0 0/20px 20px}
+#viewer .vbody iframe{width:100%;height:100%;border:0;background:#fff}
+#viewer .vbody video,#viewer .vbody audio{max-width:100%;margin:auto}
+#viewer .vmsg{margin:auto;text-align:center;color:var(--muted);font-size:13px;padding:24px;line-height:1.6}
+/* ---- appareils ---- */
+#devices .devbody{display:block;background:var(--panel);padding:10px;overflow:auto}
+.dev-item{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;
+  border:1px solid var(--border);border-radius:8px;margin-bottom:8px;background:#0d1117}
+.dev-main{flex:1 1 240px;min-width:0}
+.dev-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dev-meta{color:var(--muted);font-size:11.5px;margin-top:3px;line-height:1.5}
+.dev-badge{font-size:10px;border:1px solid var(--accent);color:var(--accent);
+  border-radius:999px;padding:1px 7px;margin-left:6px;letter-spacing:.5px;white-space:nowrap}
+.dev-actions{display:flex;gap:6px;flex-wrap:wrap}
+.btn.danger{border-color:#f85149;color:#ff7b72}
+.dev-msg{font-size:12px;color:var(--muted);min-height:16px;margin:4px 2px 8px}
+/* ---- step-up ---- */
+#stepup{position:fixed;inset:0;z-index:160;display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.88);padding:16px}
+#stepup.open{display:flex}
+@media (max-width:820px){ #stepup{padding:10px} }
+/* ---- SSH ---- */
+#ssh .vbody.sshbody{display:block;background:var(--panel);padding:0;position:relative}
+#sshFrame{width:100%;height:100%;border:0;background:#0d1117}
+#sshNotTailnet{padding:22px;font-size:13px;line-height:1.8;color:var(--fg)}
+#sshNotTailnet p{margin-bottom:10px}
+#sshNotTailnet a{color:var(--accent)}
+#sshNotTailnet code{background:#000;border:1px solid var(--border);border-radius:4px;padding:1px 5px}
+/* ---- passkeys ---- */
+.pk-block{border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:12px;background:#0d1117}
+.pk-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.pk-title{font-weight:600;font-size:13px;flex:1 1 auto}
+.pk-note{color:var(--muted);font-size:11.5px;line-height:1.5;margin-bottom:8px}
+.pk-item{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 0;border-top:1px solid var(--border)}
+.pk-item:first-of-type{border-top:0}
+.pk-main{flex:1 1 200px;min-width:0}
+.pk-name{font-size:12.5px;font-weight:600}
+.pk-meta{color:var(--muted);font-size:11px;margin-top:2px}
+#gatePasskey{width:100%;margin-top:8px}
+#stepCancel{width:100%;margin-top:6px}
+/* ---- gate maître ---- */
+#gate{position:fixed;inset:0;z-index:150;display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.88);padding:16px}
+#gate.open{display:flex}
+.gate-box{width:min(420px,100%);max-height:90vh;overflow:auto;background:var(--panel);
+  border:1px solid var(--border);border-radius:12px;padding:22px;
+  box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.gate-title{font-weight:700;letter-spacing:3px;font-size:13px}
+.gate-title span{color:var(--accent)}
+.gate-sub{color:var(--muted);font-size:12px;margin:6px 0 16px}
+.gate-box label{display:block;font-size:12px;color:var(--muted);margin-bottom:10px}
+.gate-box input[type=password],.gate-box input[type=text],.gate-box input[type=number]{
+  width:100%;margin-top:4px;background:#000;border:1px solid var(--border);
+  border-radius:6px;color:var(--fg);padding:9px 10px;font-size:14px}
+.gate-remember{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.gate-remember input[type=number]{width:60px;margin:0;padding:5px 6px}
+.gate-submit{width:100%;margin-top:8px;background:var(--accent-dim);
+  border-color:var(--accent);color:#fff}
+.gate-submit:disabled{opacity:.6;cursor:default}
+.gate-msg{min-height:18px;font-size:12px;color:#f85149;margin-top:10px}
+.btn svg{vertical-align:-2px}
+@media (max-width:820px){
+  #viewer,#devices,#ssh,#settings{padding:0}
+  #viewer .sheet,#devices .sheet,#ssh .sheet,#settings .sheet{width:100%;height:100%;border-radius:0;border:0}
+  #viewer .vhead,#devices .vhead,#ssh .vhead,#settings .vhead{flex-wrap:wrap;gap:6px;padding:8px}
+  #viewer .vname,#devices .vname,#ssh .vname,#settings .vname{flex:1 1 100%;max-width:none;font-size:12px}
+  #viewer .spacer,#devices .spacer,#ssh .spacer{display:none}
+  #viewer .vbody pre{font-size:12px;padding:10px 12px}
+  #gate{padding:10px}
+  .gate-box{padding:16px}
+}
+
+/* ---- direction artistique premium ---- */
+:root{
+  color-scheme:dark;
+  --bg:#080b0a;--bg2:rgba(76,125,88,.15);
+  --panel:#101513;--surface:#0c100e;--surface2:#141b17;--surface3:#090c0a;
+  --border:rgba(186,211,195,.12);--border2:rgba(186,211,195,.2);
+  --fg:#e7eee9;--fg2:#c3d0c6;--muted:#87958c;--muted2:#5d6d62;
+  --accent:#a6e3b2;--accent2:#74bc89;
+  --accent-dim:rgba(104,177,126,.14);--accent-glow:rgba(132,220,155,.12);
+  --on-accent:#08120b;--danger:#ff8a82;--danger-dim:rgba(255,123,114,.09);--warn:#edc778;
+  --surface-raised:var(--surface2);--glow:var(--accent-glow);
+}
+/* ---- thèmes ---- */
+html[data-theme="peps"]{
+  --bg:#04050a;--bg2:rgba(61,123,255,.18);
+  --panel:#0a0d18;--surface:#080a12;--surface2:#101528;--surface3:#05070d;
+  --border:rgba(150,180,255,.14);--border2:rgba(150,180,255,.26);
+  --fg:#eaf0ff;--fg2:#c2cff0;--muted:#8d9bc0;--muted2:#5b6788;
+  --accent:#3d7bff;--accent2:#ff2d55;
+  --accent-dim:rgba(61,123,255,.17);--accent-glow:rgba(61,123,255,.2);
+  --on-accent:#ffffff;--danger:#ff2d55;--danger-dim:rgba(255,45,85,.1);--warn:#ffd166;
+}
+html[data-theme="modern"]{
+  --bg:#0e0c11;--bg2:rgba(176,106,217,.16);
+  --panel:#171320;--surface:#120f18;--surface2:#1e1828;--surface3:#0b0910;
+  --border:rgba(201,205,214,.14);--border2:rgba(201,205,214,.26);
+  --fg:#e4e6ee;--fg2:#c9cdd6;--muted:#9a94a8;--muted2:#6a6478;
+  --accent:#b06ad9;--accent2:#f2c14e;
+  --accent-dim:rgba(176,106,217,.17);--accent-glow:rgba(176,106,217,.2);
+  --on-accent:#1a1024;--danger:#ff7a8a;--danger-dim:rgba(255,122,138,.09);--warn:#f2c14e;
+}
+html[data-theme="next"]{
+  --bg:#060608;--bg2:rgba(255,230,0,.12);
+  --panel:#0c0c11;--surface:#08080c;--surface2:#14141c;--surface3:#050507;
+  --border:rgba(255,230,0,.14);--border2:rgba(255,230,0,.3);
+  --fg:#f5f5f7;--fg2:#cfcfd8;--muted:#8f8fa3;--muted2:#5c5c70;
+  --accent:#ffe600;--accent2:#8b5cf6;
+  --accent-dim:rgba(255,230,0,.15);--accent-glow:rgba(255,230,0,.2);
+  --on-accent:#0a0a0c;--danger:#ff4d6d;--danger-dim:rgba(255,77,109,.1);--warn:#ffd166;
+}
+html[data-theme="futuriste"]{
+  --bg:#12100e;--bg2:rgba(185,167,255,.13);
+  --panel:#1a1714;--surface:#151210;--surface2:#241f1a;--surface3:#0f0d0b;
+  --border:rgba(216,214,224,.14);--border2:rgba(216,214,224,.26);
+  --fg:#e6e3ee;--fg2:#d8d6e0;--muted:#a39a92;--muted2:#6f665f;
+  --accent:#b9a7ff;--accent2:#c08552;
+  --accent-dim:rgba(185,167,255,.16);--accent-glow:rgba(185,167,255,.18);
+  --on-accent:#191322;--danger:#ff7a7a;--danger-dim:rgba(255,122,122,.09);--warn:#e8c07d;
+}
+html[data-theme="green"]{
+  --bg:#040705;--bg2:rgba(16,185,129,.17);
+  --panel:#0a120d;--surface:#07100b;--surface2:#0f1b14;--surface3:#030604;
+  --border:rgba(120,255,170,.14);--border2:rgba(120,255,170,.28);
+  --fg:#e8fff1;--fg2:#c3e8d0;--muted:#82a892;--muted2:#526b5c;
+  --accent:#10b981;--accent2:#a3ff12;
+  --accent-dim:rgba(16,185,129,.17);--accent-glow:rgba(16,185,129,.22);
+  --on-accent:#04130a;--danger:#ff5c7a;--danger-dim:rgba(255,92,122,.09);--warn:#f5d76e;
+}
+html,body{background:var(--bg);color:var(--fg);font-size:13px;letter-spacing:.01em}
+body{background:radial-gradient(ellipse at 47% -28%,var(--bg2),transparent 56%),var(--bg)}
+header{height:58px;padding:0 20px;gap:10px;background:color-mix(in srgb, var(--panel) 94%, transparent);border-bottom:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,.22);backdrop-filter:blur(18px)}
+header .logo{font-size:12px;letter-spacing:3.2px;font-weight:750;color:var(--fg)}
+header .logo:before{content:"";display:inline-block;width:7px;height:7px;margin:0 10px 1px 0;border-radius:50%;background:var(--accent);box-shadow:0 0 14px color-mix(in srgb, var(--accent) 70%, transparent)}
+header .logo span{color:var(--accent)}
+.btn{border-color:var(--border);background:rgba(255,255,255,.018);border-radius:8px;padding:7px 11px;color:var(--fg2);transition:background .18s,border-color .18s,color .18s,transform .18s}
+.btn:hover{border-color:color-mix(in srgb, var(--accent) 48%, transparent);background:color-mix(in srgb, var(--accent) 7%, transparent);color:var(--fg);transform:translateY(-1px)}
+.btn.active{background:var(--accent-dim);border-color:color-mix(in srgb, var(--accent) 40%, transparent);color:var(--fg);box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--accent) 4%, transparent)}
+#main{padding:12px;gap:12px;min-height:0}
+#files{width:300px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:linear-gradient(180deg,color-mix(in srgb, var(--surface2) 98%, transparent),color-mix(in srgb, var(--surface) 98%, transparent));box-shadow:0 14px 40px rgba(0,0,0,.16)}
+.pane-title{height:42px;display:flex;align-items:center;padding:0 14px;font-size:10px;font-weight:700;letter-spacing:1.8px;color:var(--muted);border-bottom:1px solid var(--border)}
+#center{overflow:hidden;border:1px solid var(--border);border-radius:12px;background:var(--surface3);box-shadow:0 14px 40px rgba(0,0,0,.18)}
+#tabbar{min-height:45px;padding:7px 10px 0;background:color-mix(in srgb, var(--panel) 95%, transparent);border-bottom:1px solid var(--border);gap:5px}
+.tab{padding:7px 15px;color:var(--muted);font-size:12px;border-radius:7px 7px 0 0;letter-spacing:.03em}
+.tab.active{background:var(--surface3);color:var(--fg);border-color:var(--border);box-shadow:inset 0 2px var(--accent)}
+#termwrap{background:var(--surface3)}
+#termwrap iframe{background:var(--surface3)}
+#monitor{margin:0 12px 12px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb, var(--panel) 96%, transparent);box-shadow:0 12px 32px rgba(0,0,0,.2);overflow:hidden}
+#monbar{padding:9px 14px;color:var(--muted);font-size:11px;gap:0}
+#monbar b{color:var(--fg);font-weight:600}
+#monbar svg{color:var(--accent);opacity:.9}
+#monbar .sep{color:var(--muted2);padding:0 12px}
+#monbar .hi b{color:var(--danger)}#monbar .warn b{color:var(--warn)}
+#viewer,#devices,#ssh,#settings{background:color-mix(in srgb, var(--bg) 82%, transparent);backdrop-filter:blur(12px);padding:4vh 5vw}
+#viewer .sheet,#devices .sheet,#ssh .sheet,#settings .sheet{background:var(--surface);border:1px solid var(--border2);border-radius:16px;box-shadow:0 28px 100px rgba(0,0,0,.62),0 0 0 1px rgba(255,255,255,.02);overflow:hidden}
+#viewer .vhead,#devices .vhead,#ssh .vhead,#settings .vhead{min-height:54px;padding:10px 16px;background:linear-gradient(180deg,var(--surface2),var(--surface));border-bottom:1px solid var(--border)}
+#viewer .vname,#devices .vname,#ssh .vname,#settings .vname{color:var(--fg);font-size:12px;font-weight:600;letter-spacing:.02em}
+#viewer .vmeta,#devices .vmeta,#ssh .vmeta,#settings .vmeta{color:var(--muted)}
+#viewer .vbody,#ssh .vbody,#settings .vbody{background:var(--surface3)}
+#devices .devbody{background:var(--surface);padding:16px}
+.dev-item,.pk-block{background:linear-gradient(145deg,var(--surface2),var(--surface));border-color:var(--border);border-radius:11px;padding:13px 15px}
+.dev-item{margin-bottom:9px}.pk-block{margin-bottom:14px}
+.dev-name,.pk-title{color:var(--fg)}.dev-meta,.pk-note,.pk-meta{color:var(--muted)}
+.dev-badge{border-color:color-mix(in srgb, var(--accent) 36%, transparent);background:var(--accent-dim);color:color-mix(in srgb, var(--accent) 75%, white)}
+.btn.danger{border-color:color-mix(in srgb, var(--danger) 34%, transparent);background:var(--danger-dim);color:#ff9a91}
+#gate,#stepup{background:color-mix(in srgb, var(--bg) 86%, transparent);backdrop-filter:blur(14px)}
+.gate-box{background:linear-gradient(155deg,var(--surface2),var(--surface) 72%);border-color:var(--border2);border-radius:17px;padding:30px;box-shadow:0 32px 100px rgba(0,0,0,.68),0 0 70px var(--accent-glow)}
+.gate-title{font-size:12px;letter-spacing:2.6px;color:var(--fg)}
+.gate-sub{color:var(--muted);line-height:1.6;margin:9px 0 21px}
+.gate-box label{color:var(--muted);font-size:11.5px}
+.gate-box input[type=password],.gate-box input[type=text],.gate-box input[type=number]{background:var(--surface3);border-color:var(--border2);border-radius:8px;padding:11px 12px;color:var(--fg);outline:none;transition:border .18s,box-shadow .18s}
+.gate-box input:focus{border-color:color-mix(in srgb, var(--accent) 65%, transparent);box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent)}
+.gate-remember{line-height:1.7}.gate-remember input[type=checkbox]{accent-color:#a6e3b2}
+.gate-submit{background:linear-gradient(135deg,var(--accent),var(--accent2));border:0;color:var(--on-accent);font-weight:700;padding:11px 14px;box-shadow:0 8px 24px color-mix(in srgb, var(--accent) 18%, transparent)}
+.gate-submit:hover{background:linear-gradient(135deg,color-mix(in srgb, var(--accent) 82%, white),color-mix(in srgb, var(--accent2) 82%, white));color:var(--on-accent)}
+#gatePasskey,#stepCancel{margin-top:8px}
+.gate-msg{margin-top:12px}
+:focus-visible{outline:2px solid color-mix(in srgb, var(--accent) 72%, transparent);outline-offset:2px}
+/* ---- mobile : ultra responsive ---- */
+@media(max-width:820px){
+  header{height:auto;min-height:52px;padding:calc(6px + env(safe-area-inset-top)) 8px 6px;gap:5px;row-gap:6px;flex-wrap:wrap}
+  #btnMore{margin-left:auto}
+  header .logo{font-size:10px;letter-spacing:1.8px;flex:0 0 auto}
+  header .logo:before{margin-right:6px;width:6px;height:6px}
+  header .spacer{display:none}
+  header .btn{min-height:36px;min-width:36px;padding:0 7px;font-size:11.5px;
+    display:inline-flex;align-items:center;justify-content:center}
+  header .btn svg{width:16px;height:16px}
+  .only-mobile{display:inline-flex!important}
+  .hdr-more{display:none;flex:1 0 100%;gap:6px;justify-content:flex-end;
+    padding-top:6px;border-top:1px solid var(--border)}
+  header.more-open .hdr-more{display:flex}
+  .hdr-more .btn{flex:1 1 0;max-width:110px}
+
+  #main{padding:6px;gap:0}
+  #files,#monaco{position:fixed;left:0;right:0;top:var(--hdr-h,52px);
+    height:calc(var(--app-h,100dvh) - var(--hdr-h,52px));width:auto;min-width:0;
+    border-radius:0 0 12px 12px;border-top:0;z-index:20;overscroll-behavior:contain;
+    box-shadow:0 20px 45px rgba(0,0,0,.55)}
+  #monaco{border-radius:0;box-shadow:none}
+  #files .pane-title{height:38px}
+  #center{border-radius:9px;margin:0}
+  #tabbar{min-height:42px;padding:5px 5px 0;gap:4px;scrollbar-width:none}
+  #tabbar::-webkit-scrollbar{display:none}
+  .tab{flex:1 1 0;min-height:36px;display:inline-flex;align-items:center;justify-content:center;
+    padding:6px 8px;font-size:12.5px}
+  #monitor{margin:0 6px calc(6px + env(safe-area-inset-bottom));border-radius:8px}
+  #monbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px 8px;
+    padding:8px 10px;font-size:10.5px;white-space:normal;overflow:visible}
+  #monbar .sep{display:none}
+  #monbar .seg{display:flex;align-items:center;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #monbar svg{flex:0 0 auto;width:11px;height:11px;margin-right:3px}
+  #viewer .sheet,#devices .sheet,#ssh .sheet,#settings .sheet{height:100%;border-radius:0}
+  #viewer .vhead,#devices .vhead,#ssh .vhead,#settings .vhead{padding-top:calc(10px + env(safe-area-inset-top))}
+  .gate-box{padding:20px;max-height:calc(var(--app-h,100dvh) - 24px);overflow:auto}
+  .gate-box input[type=password],.gate-box input[type=text],.gate-box input[type=number],
+  #monaco .mpath{font-size:16px}
+  #monaco .mhead{height:auto;min-height:46px;padding:6px 8px;flex-wrap:wrap;gap:6px}
+  #monaco .mtitle{display:none}
+  #monaco .mpath{flex:1 1 100%;order:2}
+  #monaco .mhead .btn{min-height:34px;min-width:34px}
+}
+@media(max-width:820px) and (orientation:landscape){
+  header{min-height:46px;padding-top:4px;padding-bottom:4px}
+  #main{padding:4px}
+  #tabbar{min-height:36px}
+  .tab{min-height:30px}
+  #monbar{grid-template-columns:repeat(6,minmax(0,1fr));font-size:10px;padding:5px 8px}
+  #monitor{margin:0 4px calc(4px + env(safe-area-inset-bottom))}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+
+
+/* ---- Monaco (éditeur VS Code) ---- */
+#monaco{width:var(--monaco-w,520px);flex:0 0 auto;display:flex;flex-direction:column;min-width:300px;
+  border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface3);
+  box-shadow:0 14px 40px rgba(0,0,0,.18)}
+#monaco.hidden{display:none}
+#monaco .mhead{height:42px;flex:0 0 auto;display:flex;align-items:center;gap:7px;padding:0 10px;
+  background:color-mix(in srgb, var(--panel) 95%, transparent);border-bottom:1px solid var(--border);min-width:0}
+#monaco .mtitle{font-size:10px;font-weight:700;letter-spacing:1.6px;color:var(--muted);white-space:nowrap}
+#monaco .mpath{flex:1;min-width:60px;background:var(--surface3);border:1px solid var(--border);
+  border-radius:6px;color:var(--fg2);padding:5px 8px;font-size:11px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;outline:none}
+#monaco .mpath:focus{border-color:color-mix(in srgb, var(--accent) 60%, transparent);box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 10%, transparent)}
+#monaco .mhead .btn{padding:4px 8px;font-size:11px;line-height:1}
+#monacoBody{position:relative;flex:1;min-height:0;background:var(--surface3)}
+#monacoHint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:24px;color:var(--muted2);font-size:12px;line-height:1.7;pointer-events:none}
+#monacoHint b{color:var(--fg2);font-weight:600}
+.monaco-editor,#monacoBody,.monaco-editor .margin,.monaco-editor .monaco-editor-background{background:var(--surface3)!important}
+
+/* ---- séparateurs redimensionnables ---- */
+.rsplit{flex:0 0 12px;width:12px;margin:0 -12px;position:relative;z-index:5;cursor:col-resize;
+  touch-action:none;display:flex;align-items:center;justify-content:center;align-self:stretch;border-radius:6px}
+.rsplit:hover{background:rgba(166,227,178,.05)}
+.rsplit.drag{background:rgba(166,227,178,.09)}
+.rsplit::before{content:"";width:1px;height:100%;background:var(--border);transition:background .15s}
+.rsplit:hover::before,.rsplit.drag::before{background:rgba(166,227,178,.55)}
+.rsplit .arw{position:absolute;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:3px;
+  opacity:0;transition:opacity .15s;pointer-events:none}
+.rsplit:hover .arw,.rsplit.drag .arw,.rsplit:focus-within .arw{opacity:1;pointer-events:auto}
+.rsplit .arw button{pointer-events:auto;width:16px;height:16px;padding:0;line-height:1;font-size:9px;cursor:pointer;
+  border:1px solid var(--border2);background:var(--surface);color:#a8b8ac;border-radius:4px}
+.rsplit .arw button:hover{background:var(--accent);border-color:var(--accent);color:#08120b}
+.rsplit.hidden{display:none!important}
+@media(max-width:820px){
+  #monaco{position:fixed;left:0;right:0;top:var(--hdr-h,52px);bottom:auto;
+    height:calc(var(--app-h,100dvh) - var(--hdr-h,52px));width:auto;min-width:0;z-index:20;
+    border:0;border-radius:0}
+  .rsplit{display:none!important}
+}
+/* téléphone en paysage : chrome compact, colonnes bornées */
+@media (max-height:520px) and (orientation:landscape){
+  header{height:44px;min-height:44px;padding:2px 8px;gap:5px;flex-wrap:nowrap}
+  header .logo{font-size:10px;letter-spacing:2px}
+  header .btn{min-height:32px;padding:0 8px;font-size:11.5px}
+  #main{padding:5px;gap:0}
+  #files{width:min(250px,36vw)!important}
+  #monaco{max-width:56vw}
+  #tabbar{min-height:34px;padding:4px 6px 0}
+  .tab{min-height:30px;padding:4px 10px;font-size:12px}
+  #monitor{margin:0 5px calc(4px + env(safe-area-inset-bottom))}
+  #monbar{font-size:10px;padding:4px 8px}
+}
+
+
+/* ---- sélecteur de thème ---- */
+.theme-menu{position:fixed;top:calc(var(--hdr-h,46px) + 8px);right:12px;z-index:80;width:280px;
+  background:linear-gradient(155deg,var(--surface2),var(--surface));border:1px solid var(--border2);
+  border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.62);padding:10px;
+  backdrop-filter:blur(14px)}
+.theme-menu.hidden{display:none}
+.tm-head{font-size:10px;font-weight:700;letter-spacing:1.8px;color:var(--muted);
+  text-transform:uppercase;padding:4px 8px 9px}
+.tm-list{display:flex;flex-direction:column;gap:4px}
+.tm-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;
+  border:1px solid transparent;background:transparent;color:var(--fg);cursor:pointer;
+  text-align:left;width:100%;font:inherit;touch-action:manipulation}
+.tm-item:hover{border-color:var(--border2);background:color-mix(in srgb, var(--accent) 8%, transparent)}
+.tm-item.active{border-color:color-mix(in srgb, var(--accent) 45%, transparent);
+  background:color-mix(in srgb, var(--accent) 12%, transparent)}
+.tm-name{flex:1;font-size:12.5px;font-weight:600;letter-spacing:.01em}
+.tm-sw{display:flex;gap:3px;flex:0 0 auto}
+.tm-sw i{width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 1px rgba(255,255,255,.14)}
+.tm-check{flex:0 0 auto;color:var(--accent);font-size:12px;opacity:0}
+.tm-item.active .tm-check{opacity:1}
+@media(max-width:820px){
+  .theme-menu{left:8px;right:8px;width:auto;top:calc(var(--hdr-h,52px) + 6px);
+    max-height:calc(var(--app-h,100dvh) - var(--hdr-h,52px) - 20px);overflow:auto}
+  .tm-item{padding:11px 10px}
+}
+
+
+/* ---- panneau Réglages ---- */
+#settings .sheet{width:min(1040px,100%)}
+#settings .setbody{display:flex;flex:1;min-height:0;padding:0;background:var(--surface)}
+#settings .setnav{width:190px;flex:0 0 auto;display:flex;flex-direction:column;gap:3px;padding:14px 10px;
+  border-right:1px solid var(--border);background:color-mix(in srgb, var(--surface) 70%, transparent);overflow:auto}
+.settab{text-align:left;padding:9px 12px;border-radius:8px;border:1px solid transparent;background:transparent;
+  color:var(--muted);font:inherit;font-size:12.5px;cursor:pointer}
+.settab:hover{color:var(--fg);background:color-mix(in srgb, var(--accent) 7%, transparent)}
+.settab.active{color:var(--fg);background:color-mix(in srgb, var(--accent) 13%, transparent);
+  border-color:color-mix(in srgb, var(--accent) 35%, transparent)}
+#settings .setpanes{flex:1;min-width:0;overflow:auto;padding:18px 22px 26px}
+.setpane{display:none}
+.setpane.active{display:block}
+.seth{font-size:10px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);
+  margin:0 0 14px}
+.setrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 0;font-size:12.5px;color:var(--fg2)}
+.setrow input[type=range]{flex:1;min-width:140px;-webkit-appearance:none;appearance:none;height:4px;
+  border-radius:2px;background:color-mix(in srgb, var(--accent) 35%, var(--border2))}
+.setrow input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--accent);border:2px solid var(--surface3);box-shadow:0 0 0 1px var(--accent);cursor:pointer}
+.setrow input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+  background:var(--accent);border:2px solid var(--surface3);box-shadow:0 0 0 1px var(--accent);cursor:pointer}
+.setrow select,.setrow input[type=number]{background:var(--surface3);border:1px solid var(--border2);
+  color:var(--fg);border-radius:7px;padding:6px 8px;font:inherit;font-size:12px}
+.setrow input[type=checkbox],.setchecks input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+.setchecks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px 14px;margin:10px 0 4px}
+.setchecks label{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--fg2)}
+.setnote{color:var(--muted);font-size:11.5px;line-height:1.7;margin-top:12px}
+.setactions{display:flex;gap:8px;flex-wrap:wrap}
+.setabout{display:flex;flex-direction:column;gap:2px;font-size:12px}
+.setrow2{display:flex;justify-content:space-between;gap:16px;padding:6px 0;border-bottom:1px solid var(--border)}
+.setrow2 span:first-child{color:var(--muted)}
+.setrow2 span:last-child{color:var(--fg);text-align:right;word-break:break-word}
+#settings .tm-list{margin-top:2px}
+@media(max-width:820px){
+  #settings{padding:0}
+  #settings .sheet{width:100%;height:100%;border-radius:0}
+  #settings .setbody{flex-direction:column}
+  #settings .setnav{width:auto;flex:0 0 auto;flex-direction:row;gap:6px;padding:10px;border-right:0;
+    border-bottom:1px solid var(--border);overflow-x:auto;white-space:nowrap}
+  .settab{padding:8px 11px;font-size:12px}
+  #settings .setpanes{padding:14px 14px 22px}
+  .setchecks{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+
+/* =====================================================================
+   MAREXCODE WEB — couche « premium »
+   animations · flou · profondeur · micro-interactions
+   ===================================================================== */
+:root{
+  --ease-spring:cubic-bezier(.16,1,.3,1);
+  --ease-out:cubic-bezier(.22,1,.36,1);
+  --dur-1:.16s;--dur-2:.26s;--dur-3:.46s;
+  --shadow-1:0 10px 30px rgba(0,0,0,.22);
+  --shadow-2:0 24px 70px rgba(0,0,0,.44);
+  --sheen:linear-gradient(115deg,transparent 32%,color-mix(in srgb,var(--accent) 22%,transparent) 50%,transparent 68%);
+}
+
+/* ---- ambiance : aurore lente + grain fin ---- */
+body::after{
+  content:"";position:fixed;inset:-18vmax;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(42vmax 30vmax at 18% 12%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 70%),
+    radial-gradient(36vmax 26vmax at 84% 6%,color-mix(in srgb,var(--accent2) 18%,transparent),transparent 70%),
+    radial-gradient(50vmax 32vmax at 62% 104%,color-mix(in srgb,var(--accent) 15%,transparent),transparent 72%);
+  filter:blur(36px);opacity:.85;will-change:transform;transform:translateZ(0);
+  animation:marexAurora 38s ease-in-out infinite alternate;
+}
+@keyframes marexAurora{
+  0%{transform:translate3d(-2%,-1%,0) scale(1)}
+  50%{transform:translate3d(2%,2%,0) scale(1.07)}
+  100%{transform:translate3d(-1%,3%,0) scale(1.03)}
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:3;pointer-events:none;opacity:.02;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+header,#main,#monitor{position:relative;z-index:1}
+
+/* ---- survol / sélection / scrollbars ---- */
+::selection{background:color-mix(in srgb,var(--accent) 34%,transparent);color:var(--fg)}
+*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--accent) 32%,transparent) transparent}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--accent) 26%,transparent);border:3px solid transparent;background-clip:content-box;border-radius:10px}
+::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--accent) 50%,transparent);background-clip:content-box}
+
+/* ---- header : lueur, ligne d'accent, logo pulsé ---- */
+header{transition:background-color var(--dur-2) ease,box-shadow var(--dur-2) ease}
+header::after{
+  content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent) 52%,transparent) 45%,color-mix(in srgb,var(--accent2) 34%,transparent) 70%,transparent);
+  opacity:.55;
+}
+header .logo{transition:letter-spacing var(--dur-2) var(--ease-out),color var(--dur-2) ease}
+header .logo:hover{letter-spacing:4.6px}
+header .logo:before{animation:marexDot 3.4s ease-in-out infinite}
+@keyframes marexDot{
+  0%,100%{box-shadow:0 0 10px color-mix(in srgb,var(--accent) 55%,transparent);opacity:.85;transform:scale(1)}
+  50%{box-shadow:0 0 24px color-mix(in srgb,var(--accent) 90%,transparent);opacity:1;transform:scale(1.18)}
+}
+
+/* ---- boutons : relief, reflet, ripple ---- */
+.btn,#btnMore,.tab,.tm-item,.settab{position:relative;overflow:hidden;isolation:isolate}
+.btn{transition:background var(--dur-1) var(--ease-out),border-color var(--dur-1) var(--ease-out),color var(--dur-1) var(--ease-out),transform var(--dur-1) var(--ease-out),box-shadow var(--dur-2) var(--ease-out)}
+.btn::after{
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:var(--sheen);transform:translateX(-130%);
+  transition:transform .62s var(--ease-out);
+}
+.btn:hover::after{transform:translateX(130%)}
+.btn:hover{box-shadow:0 8px 22px -14px color-mix(in srgb,var(--accent) 85%,transparent)}
+.btn:active{transform:translateY(0) scale(.972)}
+.btn.active{box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 22%,transparent),0 10px 26px -18px color-mix(in srgb,var(--accent) 90%,transparent)}
+.btn svg{transition:transform var(--dur-2) var(--ease-spring)}
+.btn:hover svg{transform:translateY(-1px)}
+#btnMore{transition:transform var(--dur-2) var(--ease-spring),background var(--dur-1) ease,border-color var(--dur-1) ease}
+#btnMore[aria-expanded="true"]{transform:rotate(90deg);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:var(--accent-dim)}
+#btnRefresh:active{transform:rotate(180deg) scale(.9)}
+.ripple{
+  position:absolute;border-radius:50%;pointer-events:none;z-index:-1;
+  background:radial-gradient(circle,color-mix(in srgb,var(--accent) 42%,transparent),transparent 70%);
+  transform:scale(0);opacity:.9;animation:marexRipple .58s var(--ease-out) forwards;
+}
+@keyframes marexRipple{to{transform:scale(2.8);opacity:0}}
+
+/* ---- panneaux de verre (desktop) : l'aurore transparaît ---- */
+@media(min-width:821px){
+  header{background:color-mix(in srgb,var(--panel) 80%,transparent);backdrop-filter:blur(22px) saturate(1.1)}
+  #files,#center,#monaco,#monitor{backdrop-filter:blur(18px) saturate(1.08)}
+  #files{background:linear-gradient(180deg,color-mix(in srgb,var(--surface2) 80%,transparent),color-mix(in srgb,var(--surface) 84%,transparent))}
+  #center,#monaco{background:color-mix(in srgb,var(--surface3) 86%,transparent)}
+  #monitor{background:color-mix(in srgb,var(--panel) 82%,transparent)}
+}
+/* ---- relief : halo teinté et filet lumineux sur les panneaux ---- */
+@media(min-width:821px){
+  #files,#center,#monaco{box-shadow:0 18px 60px -34px color-mix(in srgb,var(--accent) 55%,transparent),0 14px 40px rgba(0,0,0,.18)}
+  #monitor{box-shadow:0 12px 40px -30px color-mix(in srgb,var(--accent) 45%,transparent),0 12px 32px rgba(0,0,0,.2)}
+}
+#files,#center,#monaco,#monitor{position:relative}
+#files::after,#center::after,#monaco::after,#monitor::after{
+  content:"";position:absolute;top:0;left:0;right:0;height:1px;pointer-events:none;z-index:3;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent) 38%,transparent) 45%,transparent);
+  opacity:.55;
+}
+/* ---- panneaux : entrée en cascade, survol, focus ---- */
+@keyframes marexCard{from{opacity:0;transform:translateY(10px) scale(.988)}to{opacity:1;transform:none}}
+#files,#center,#monaco,#monitor{animation:marexCard var(--dur-3) var(--ease-spring) both}
+#center{animation-delay:.04s}
+#monaco{animation-delay:.08s}
+#monitor{animation-delay:.12s}
+#center{transition:border-color var(--dur-2) ease,box-shadow var(--dur-2) ease}
+#center:focus-within{
+  border-color:color-mix(in srgb,var(--accent) 30%,transparent);
+  box-shadow:0 14px 40px rgba(0,0,0,.2),0 0 0 1px color-mix(in srgb,var(--accent) 16%,transparent),0 0 42px -18px color-mix(in srgb,var(--accent) 55%,transparent);
+}
+#files,#monaco{transition:border-color var(--dur-2) ease,box-shadow var(--dur-2) ease,width var(--dur-2) var(--ease-out)}
+@media (hover:hover) and (pointer:fine){
+  #files:hover,#monaco:hover{box-shadow:0 18px 52px rgba(0,0,0,.24);border-color:color-mix(in srgb,var(--accent) 22%,transparent)}
+}
+
+/* ---- onglets ---- */
+#tabbar .tab{box-shadow:none!important;transition:color var(--dur-1) ease,background var(--dur-1) ease}
+#tabbar .tab::after{
+  content:"";position:absolute;left:14px;right:14px;bottom:0;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  transform:scaleX(0);transform-origin:50%;transition:transform var(--dur-2) var(--ease-spring);
+}
+#tabbar .tab.active::after{transform:scaleX(1)}
+#tabbar .tab:hover{color:var(--fg2)}
+
+/* ---- barre de monitoring : balayage discret ---- */
+#monbar{position:relative;overflow:hidden}
+#monbar::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(100deg,transparent 42%,color-mix(in srgb,var(--accent) 9%,transparent) 50%,transparent 58%);
+  transform:translateX(-100%);animation:marexSweep 9.5s ease-in-out infinite;
+}
+@keyframes marexSweep{0%,72%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+#monbar svg{filter:drop-shadow(0 0 6px color-mix(in srgb,var(--accent) 30%,transparent))}
+
+/* ---- séparateurs ---- */
+.rsplit{transition:background var(--dur-1) ease}
+.rsplit:hover{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.rsplit.drag{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.rsplit:hover::before,.rsplit.drag::before{box-shadow:0 0 12px color-mix(in srgb,var(--accent) 55%,transparent)}
+
+/* ---- modales : voile flouté, feuille ressort ---- */
+#viewer,#devices,#ssh,#settings{backdrop-filter:blur(16px) saturate(1.05);opacity:0;transition:opacity var(--dur-1) ease}
+#viewer.open,#devices.open,#ssh.open,#settings.open{opacity:1;animation:marexVeil .22s ease-out both}
+@keyframes marexVeil{from{opacity:0}to{opacity:1}}
+#viewer .sheet,#devices .sheet,#ssh .sheet,#settings .sheet{
+  position:relative;animation:marexSheet var(--dur-3) var(--ease-spring) both;
+}
+#devices .sheet,#ssh .sheet,#settings .sheet{animation-delay:.03s}
+@keyframes marexSheet{
+  from{opacity:0;transform:translateY(18px) scale(.966);filter:blur(6px)}
+  to{opacity:1;transform:none;filter:none}
+}
+#viewer .sheet::before,#devices .sheet::before,#ssh .sheet::before,#settings .sheet::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:1px;pointer-events:none;z-index:2;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent) 58%,transparent),transparent);
+  opacity:.7;
+}
+#viewer.closing,#devices.closing,#ssh.closing,#settings.closing{animation:none!important;opacity:0;pointer-events:none;transition:opacity .17s ease}
+#viewer.closing .sheet,#devices.closing .sheet,#ssh.closing .sheet,#settings.closing .sheet{
+  animation:none!important;
+  transform:translateY(10px) scale(.986);opacity:0;filter:blur(3px);
+  transition:opacity .17s ease,transform .17s ease,filter .17s ease;
+}
+#viewer .vhead,#devices .vhead,#ssh .vhead,#settings .vhead{position:relative}
+#viewer .vhead::after,#devices .vhead::after,#ssh .vhead::after,#settings .vhead::after{
+  content:"";position:absolute;left:16px;right:16px;bottom:-1px;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent) 24%,transparent),transparent);
+}
+.vhead .btn{transition:background var(--dur-1) ease,border-color var(--dur-1) ease,color var(--dur-1) ease,transform var(--dur-1) ease}
+#viewer .btn[href],#viewer a.btn{text-decoration:none;display:inline-flex;align-items:center}
+
+/* ---- appareils / passkeys : entrée décalée ---- */
+@keyframes marexItem{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+#devices .dev-item,#devices .pk-block,#devices .pk-item{animation:marexItem .34s var(--ease-out) both}
+#devices .dev-item:nth-child(1),#devices .pk-block:nth-child(1){animation-delay:.03s}
+#devices .dev-item:nth-child(2){animation-delay:.06s}
+#devices .dev-item:nth-child(3){animation-delay:.09s}
+#devices .dev-item:nth-child(4){animation-delay:.12s}
+#devices .dev-item:nth-child(n+5){animation-delay:.15s}
+#devices .dev-item,#devices .pk-block{transition:border-color var(--dur-2) ease,box-shadow var(--dur-2) ease,transform var(--dur-2) var(--ease-out)}
+@media (hover:hover) and (pointer:fine){
+  #devices .dev-item:hover,#devices .pk-block:hover{border-color:color-mix(in srgb,var(--accent) 30%,transparent);box-shadow:0 12px 34px -22px color-mix(in srgb,var(--accent) 75%,transparent);transform:translateY(-1px)}
+}
+.dev-badge{animation:marexBadge 4.2s ease-in-out infinite}
+@keyframes marexBadge{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 0%,transparent)}50%{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 10%,transparent)}}
+
+/* ---- porte maître / step-up ---- */
+#gate,#stepup{backdrop-filter:blur(18px) saturate(1.06)}
+#gate.open .gate-box{animation:marexGate var(--dur-3) var(--ease-spring) both}
+#stepup.open .gate-box{animation:marexGate .3s var(--ease-spring) both}
+@keyframes marexGate{
+  from{opacity:0;transform:translateY(20px) scale(.955);filter:blur(8px)}
+  to{opacity:1;transform:none;filter:none}
+}
+.gate-box{position:relative;transition:box-shadow var(--dur-3) ease}
+.gate-box::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
+  background:linear-gradient(140deg,color-mix(in srgb,var(--accent) 46%,transparent),transparent 38%,color-mix(in srgb,var(--accent2) 34%,transparent));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;opacity:.5;
+  transition:opacity var(--dur-3) ease;
+}
+#gate.open .gate-box::before{animation:marexEdge 6s ease-in-out infinite}
+@keyframes marexEdge{0%,100%{opacity:.34}50%{opacity:.72}}
+.gate-title{text-shadow:0 0 22px color-mix(in srgb,var(--accent) 24%,transparent)}
+.gate-submit{position:relative;overflow:hidden;transition:transform var(--dur-1) var(--ease-out),box-shadow var(--dur-2) ease,filter var(--dur-1) ease}
+.gate-submit::after{content:"";position:absolute;inset:0;pointer-events:none;background:var(--sheen);transform:translateX(-130%);transition:transform .66s var(--ease-out)}
+.gate-submit:hover::after{transform:translateX(130%)}
+.gate-submit:hover{box-shadow:0 12px 34px -12px color-mix(in srgb,var(--accent) 55%,transparent);filter:saturate(1.05)}
+.gate-submit:active{transform:scale(.985)}
+.gate-box.shake{animation:marexShake .44s cubic-bezier(.36,.07,.19,.97)}
+@keyframes marexShake{
+  10%,90%{transform:translateX(-2px)}
+  20%,80%{transform:translateX(4px)}
+  30%,50%,70%{transform:translateX(-7px)}
+  40%,60%{transform:translateX(7px)}
+}
+.gate-msg{min-height:16px}
+
+/* ---- réglages ---- */
+#settings .settab{transition:color var(--dur-1) ease,background var(--dur-1) ease,border-color var(--dur-1) ease,transform var(--dur-1) var(--ease-out)}
+#settings .settab:hover{transform:translateX(2px)}
+#settings .settab.active{box-shadow:inset 2px 0 var(--accent)}
+@keyframes marexPane{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#settings .setpane.active{animation:marexPane .26s var(--ease-out) both}
+.setrow2{transition:background var(--dur-1) ease,padding-left var(--dur-1) ease}
+.setrow2:hover{background:color-mix(in srgb,var(--accent) 5%,transparent);padding-left:6px}
+.tm-item{transition:border-color var(--dur-1) ease,background var(--dur-1) ease,transform var(--dur-1) var(--ease-out)}
+.tm-item:hover{transform:translateX(2px)}
+.tm-item.active{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 18%,transparent),0 8px 22px -20px color-mix(in srgb,var(--accent) 80%,transparent)}
+#settings .setbody{background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 96%,transparent),var(--surface))}
+
+/* ---- thème : fondu des couleurs au changement ---- */
+html.theming body,html.theming header,html.theming #files,html.theming #center,
+html.theming #monaco,html.theming #monitor,html.theming .btn,html.theming .sheet,
+html.theming .gate-box,html.theming #monbar,html.theming .pane-title,html.theming .tab,
+html.theming .dev-item,html.theming .pk-block,html.theming .settab,html.theming .setnav{
+  transition:background-color .38s ease,background .38s ease,color .38s ease,
+             border-color .38s ease,box-shadow .38s ease!important;
+}
+
+/* ---- toast ---- */
+#toast{
+  position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));z-index:200;
+  transform:translate(-50%,16px);opacity:0;pointer-events:none;max-width:min(88vw,460px);
+  padding:10px 16px;border-radius:999px;font-size:12.5px;color:var(--fg);text-align:center;
+  background:color-mix(in srgb,var(--surface2) 92%,transparent);
+  border:1px solid var(--border2);
+  box-shadow:0 20px 58px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.02);
+  backdrop-filter:blur(16px);
+  transition:opacity var(--dur-1) ease,transform var(--dur-3) var(--ease-spring);
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ---- téléphone : alléger les effets ---- */
+@media(max-width:820px){
+  body::after{animation:none;opacity:.4;filter:blur(42px)}
+  body::before{display:none}
+  #files,#center,#monaco,#monitor{animation-duration:.3s}
+  #monbar::after{animation:none}
+  .gate-submit::after,.btn::after{display:none}
+}
+
+/* ---- accessibilité : mouvement réduit ---- */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.001ms!important;
+    scroll-behavior:auto!important;
+  }
+  body::after,body::before{display:none}
+}
+
+
+/* =====================================================================
+   Barre de touches mobile + clavier code
+   ===================================================================== */
+#scrollFab{
+  position:fixed;right:8px;bottom:calc(var(--kb,0px) + 64px);z-index:92;display:none;
+  flex-direction:column;gap:6px;
+}
+#scrollFab.show{display:flex;animation:marexItem .2s ease both}
+#scrollFab button{
+  width:40px;height:36px;border-radius:10px;border:1px solid var(--border2);
+  background:color-mix(in srgb,var(--surface2) 92%,transparent);color:var(--fg);
+  font:inherit;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);backdrop-filter:blur(10px);
+  cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+#scrollFab button:active{background:var(--accent-dim);border-color:var(--accent);transform:scale(.95)}
+#scrollFab #sfLive{color:var(--accent);font-size:16px}
+body.ck-on #scrollFab{display:none!important}
+#mkInput{
+  position:fixed;left:0;bottom:0;width:1px;height:1px;margin:0;padding:0;border:0;
+  opacity:.01;background:transparent;color:transparent;caret-color:transparent;
+  font-size:16px;z-index:-1;pointer-events:none;outline:none;
+}
+#mkeys{
+  position:fixed;left:0;right:0;bottom:var(--kb,0px);z-index:94;display:none;
+  align-items:center;gap:4px;padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+  overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;
+  background:color-mix(in srgb,var(--surface2) 94%,transparent);
+  border-top:1px solid var(--border2);
+  backdrop-filter:blur(20px) saturate(1.1);
+  box-shadow:0 -16px 44px rgba(0,0,0,.45);
+  -webkit-overflow-scrolling:touch;
+  animation:mkBarIn .22s var(--ease-out) both;
+}
+#mkeys.show{display:flex}
+#mkeys::-webkit-scrollbar{display:none}
+@keyframes mkBarIn{from{transform:translateY(18px);opacity:0}to{transform:none;opacity:1}}
+.mk{
+  flex:0 0 auto;min-width:30px;height:38px;padding:0 6px;border-radius:9px;
+  border:1px solid var(--border2);background:color-mix(in srgb,var(--surface) 72%,transparent);
+  color:var(--fg);font:inherit;font-size:12px;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  transition:background .14s ease,border-color .14s ease,transform .14s ease,color .14s ease;
+}
+.mk:active{transform:scale(.94);background:var(--accent-dim);border-color:var(--accent)}
+.mk.mod.on{
+  background:color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color:color-mix(in srgb,var(--accent) 55%,transparent);
+  color:var(--fg);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 26%,transparent);
+}
+.mk.mod.lock{
+  background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:700;
+  box-shadow:0 0 16px -4px color-mix(in srgb,var(--accent) 75%,transparent);
+}
+.mk.prim{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));border:0;
+  color:var(--on-accent);font-weight:700;
+}
+.mk.sep{min-width:1px;width:1px;height:24px;padding:0;border:0;background:var(--border2);pointer-events:none}
+
+#codekb{
+  position:fixed;left:0;right:0;bottom:var(--kb,0px);z-index:93;display:none;
+  min-height:190px;max-height:38vh;overflow:auto;
+  padding:8px 8px calc(10px + env(safe-area-inset-bottom));
+  background:color-mix(in srgb,var(--surface) 97%,transparent);
+  border:1px solid var(--border2);border-bottom:0;border-radius:18px 18px 0 0;
+  backdrop-filter:blur(22px) saturate(1.1);
+  box-shadow:0 -26px 80px rgba(0,0,0,.6);
+  overscroll-behavior:contain;
+}
+#codekb.show{display:block;animation:ckIn .24s var(--ease-spring) both}
+@keyframes ckIn{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+.ck-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 2px 8px}
+.ck-title{color:var(--muted);font-size:10px;font-weight:700;letter-spacing:1.7px;text-transform:uppercase}
+.ck-main{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:9px;white-space:nowrap;
+  border:1px solid var(--border2);background:color-mix(in srgb,var(--surface2) 90%,transparent);
+  color:var(--fg2);font:inherit;font-size:11.5px;cursor:pointer;touch-action:manipulation}
+.ck-main:active{background:var(--accent-dim);border-color:var(--accent);color:var(--fg)}
+.ck-main svg{width:15px;height:15px}
+.ck-group{margin:7px 0 4px;color:var(--muted2);font-size:9.5px;letter-spacing:1.4px;text-transform:uppercase}
+.ck-row{display:flex;flex-wrap:wrap;gap:5px}
+.ck{
+  min-width:34px;height:31px;padding:0 8px;border-radius:7px;
+  border:1px solid var(--border);background:color-mix(in srgb,var(--surface2) 88%,transparent);
+  color:var(--fg);font:inherit;font-size:12px;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  transition:background .14s ease,border-color .14s ease,transform .14s ease;
+}
+.ck:active{background:var(--accent-dim);border-color:var(--accent);transform:scale(.94)}
+.ck.mod.on{background:color-mix(in srgb, var(--accent) 18%, transparent);border-color:var(--accent)}
+.ck.mod.lock{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:700}
+.ck.wide{min-width:58px}
+.ck.sym{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+body.mkeys-on #monitor{display:none}
+body.ck-on #main{margin-bottom:calc(var(--ck-h,0px) + 4px)}
+body.ck-on #center{border-bottom-left-radius:10px;border-bottom-right-radius:10px}
+body.mkeys-on #center{border-bottom-left-radius:6px;border-bottom-right-radius:6px}
+
+@media (max-height:520px){#codekb{min-height:130px;max-height:44vh}}
+@media (min-width:821px) and (pointer:fine){#mkeys,#codekb{display:none!important}}
+@media (prefers-reduced-motion:reduce){
+  #mkeys.show,#codekb.show{animation:none}
+}
+
+</style>
+<script>
+(function () {
+  var ok = { marex: 1, peps: 1, modern: 1, next: 1, futuriste: 1, green: 1 };
+  try {
+    var t = localStorage.getItem("marex.theme");
+    if (t && ok[t]) document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+})();
+</script>
+</head>
+<body>
+<header>
+  <div class="logo">MAREXCODE <span>WEB</span></div>
+  <div class="spacer"></div>
+  <button class="btn active" id="btnFiles" title="Afficher / masquer les fichiers">&#128193; <span class="lbl">Fichiers</span></button>
+  <button class="btn" id="btnSsh" title="Terminal SSH distant (Tailscale)">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 9l3 3-3 3M12 15h6"/></svg>
+    <span class="lbl">SSH</span>
+  </button>
+  <button class="btn" id="btnMonaco" title="Éditeur Monaco (VS Code)">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6"/></svg>
+    <span class="lbl">Monaco</span>
+  </button>
+  <button class="btn only-mobile" id="btnMore" title="Plus d'actions" aria-expanded="false">&#8943;</button>
+  <div class="hdr-more" id="hdrMore">
+    <button class="btn" id="btnSettings" title="Réglages">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
+      <span class="lbl">Réglages</span>
+    </button>
+    <button class="btn active" id="btnMon" title="Afficher / masquer le monitoring">&#128202; <span class="lbl">Monitoring</span></button>
+    <button class="btn" id="btnRefresh" title="Recharger le panneau actif">&#10227;</button>
+    <button class="btn" id="btnDevices" title="Appareils autorisés">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/></svg>
+      <span class="lbl">Appareils</span>
+    </button>
+    <button class="btn" id="btnLock" title="Verrouiller (révoque cet appareil)">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+    </button>
+  </div>
+</header>
+<div id="settings" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Réglages">
+    <div class="vhead">
+      <span class="vname">Réglages</span>
+      <span class="vmeta" id="settingsMeta"></span>
+      <span class="spacer"></span>
+      <button class="btn" id="settingsResetAll">Tout réinitialiser</button>
+      <button class="btn" id="settingsClose" title="Fermer">&#10005;</button>
+    </div>
+    <div class="vbody setbody">
+      <nav class="setnav" id="setnav" role="tablist">
+        <button class="settab active" data-sec="appearance" role="tab">Apparence</button>
+        <button class="settab" data-sec="monaco" role="tab">Monaco</button>
+        <button class="settab" data-sec="terminal" role="tab">Terminal</button>
+        <button class="settab" data-sec="monitoring" role="tab">Monitoring</button>
+        <button class="settab" data-sec="files" role="tab">Fichiers</button>
+        <button class="settab" data-sec="security" role="tab">Sécurité</button>
+        <button class="settab" data-sec="about" role="tab">À propos</button>
+      </nav>
+      <div class="setpanes">
+        <section class="setpane active" data-sec="appearance">
+          <h2 class="seth">Thème</h2>
+          <div class="tm-list" id="themeList"></div>
+        </section>
+        <section class="setpane" data-sec="monaco">
+          <h2 class="seth">Monaco</h2>
+          <label class="setrow">Taille de police <input type="range" id="setMonacoFont" min="10" max="20" step="0.5"> <b id="setMonacoFontVal"></b></label>
+          <label class="setrow"><input type="checkbox" id="setMonacoMinimap"> Minimap</label>
+          <label class="setrow"><input type="checkbox" id="setMonacoWrap"> Retour à la ligne</label>
+          <label class="setrow">Tabulation <select id="setMonacoTab"><option value="2">2</option><option value="4">4</option></select></label>
+        </section>
+        <section class="setpane" data-sec="terminal">
+          <h2 class="seth">Terminal</h2>
+          <label class="setrow">Onglet par défaut
+            <select id="setTerminalTab"><option value="0">S1</option><option value="1">S2</option><option value="2">S3</option><option value="3">S4</option></select>
+          </label>
+          <p class="setnote">Cet onglet est chargé après le déverrouillage (et au rechargement).</p>
+        </section>
+        <section class="setpane" data-sec="monitoring">
+          <h2 class="seth">Monitoring</h2>
+          <label class="setrow">Rafraîchissement
+            <select id="setMonInterval"><option value="3000">3 s</option><option value="5000">5 s</option><option value="10000">10 s</option><option value="30000">30 s</option></select>
+          </label>
+          <div class="setchecks" id="setMonSegs">
+            <label><input type="checkbox" data-seg="cpu"> CPU</label>
+            <label><input type="checkbox" data-seg="ram"> RAM</label>
+            <label><input type="checkbox" data-seg="disk"> Disque</label>
+            <label><input type="checkbox" data-seg="net"> Réseau</label>
+            <label><input type="checkbox" data-seg="load"> Load</label>
+            <label><input type="checkbox" data-seg="up"> Uptime</label>
+          </div>
+        </section>
+        <section class="setpane" data-sec="files">
+          <h2 class="seth">Fichiers</h2>
+          <label class="setrow"><input type="checkbox" id="setFilesOpen"> Afficher le panneau au démarrage</label>
+          <button class="btn" id="setResetCols">Réinitialiser les largeurs de colonnes</button>
+          <p class="setnote">MarexFile est en lecture seule. La vue liste/grille se règle dans son propre menu.</p>
+        </section>
+        <section class="setpane" data-sec="security">
+          <h2 class="seth">Sécurité</h2>
+          <div class="setactions">
+            <button class="btn" id="setDevices">Appareils autorisés</button>
+            <button class="btn" id="setPasskeys">Passkeys</button>
+            <button class="btn" id="setLock">Verrouiller</button>
+          </div>
+          <p class="setnote">Le mot de passe maître, le TOTP et la durée de confiance se règlent sur la console 102 (<code>marexgate</code>).</p>
+        </section>
+        <section class="setpane" data-sec="about">
+          <h2 class="seth">À propos</h2>
+          <div id="setAbout" class="setabout">…</div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="main">
+  <aside id="files">
+    <div class="pane-title">Fichiers</div>
+    <iframe id="filesFrame" title="Fichiers"></iframe>
+  </aside>
+  <div class="rsplit" id="rsplitFiles" role="separator" aria-label="Redimensionner les fichiers">
+    <div class="arw"><button type="button" data-d="-1" title="Rétrécir les fichiers">&#9664;</button><button type="button" data-d="1" title="Agrandir les fichiers">&#9654;</button></div>
+  </div>
+  <section id="center">
+    <div id="tabbar" role="tablist"></div>
+    <div id="termwrap"></div>
+    <div id="scrollFab" aria-label="Défilement du terminal">
+      <button type="button" id="sfUp" aria-label="Voir plus ancien" title="Plus ancien">&#9650;</button>
+      <button type="button" id="sfDown" aria-label="Voir plus récent" title="Plus récent">&#9660;</button>
+      <button type="button" id="sfLive" aria-label="Revenir au direct" title="Direct">&#9679;</button>
+    </div>
+  </section>
+  <div class="rsplit hidden" id="rsplitMonaco" role="separator" aria-label="Redimensionner Monaco">
+    <div class="arw"><button type="button" data-d="-1" title="Agrandir Monaco">&#9664;</button><button type="button" data-d="1" title="Rétrécir Monaco">&#9654;</button></div>
+  </div>
+  <section id="monaco" class="hidden">
+    <div class="mhead">
+      <span class="mtitle">MONACO</span>
+      <input class="mpath" id="monacoPath" placeholder="/home/sam/projet/fichier" spellcheck="false" autocomplete="off">
+      <button class="btn" id="monacoReload" title="Recharger le fichier">&#10227;</button>
+      <button class="btn" id="monacoClose" title="Fermer Monaco">&#10005;</button>
+    </div>
+    <div id="monacoBody">
+      <div id="monacoHint">Ouvrez un fichier depuis le panneau <b>Fichiers</b><br>(ou saisissez un chemin ci-dessus)</div>
+    </div>
+  </section>
+</div>
+<footer id="monitor">
+  <div id="monbar" title="Monitoring de l'hôte Marexcode (LXC 102)">…</div>
+</footer>
+
+<input id="mkInput" class="mk-input" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-hidden="true" tabindex="-1">
+<div id="mkeys" role="toolbar" aria-label="Touches du terminal">
+  <button type="button" class="mk prim" id="mkHide" aria-label="Ranger le clavier" title="Ranger le clavier">&#8964;</button>
+  <button type="button" class="mk" id="mkCode" aria-label="Clavier code" aria-expanded="false" title="Clavier code">&#9000;</button>
+  <span class="mk sep" aria-hidden="true"></span>
+  <button type="button" class="mk" data-key="Escape" aria-label="Échap">Esc</button>
+  <button type="button" class="mk" data-key="Tab" aria-label="Tabulation">Tab</button>
+  <button type="button" class="mk" data-key="Tab" data-shift="1" aria-label="Maj+Tab">&#8679;Tab</button>
+  <button type="button" class="mk mod" data-mod="ctrl" aria-pressed="false" aria-label="Ctrl">Ctrl</button>
+  <button type="button" class="mk" data-key="ArrowUp" aria-label="Flèche haut">&#8593;</button>
+  <button type="button" class="mk" data-key="ArrowDown" aria-label="Flèche bas">&#8595;</button>
+  <button type="button" class="mk" data-key="ArrowLeft" aria-label="Flèche gauche">&#8592;</button>
+  <button type="button" class="mk" data-key="ArrowRight" aria-label="Flèche droite">&#8594;</button>
+</div>
+<div id="codekb" role="dialog" aria-label="Clavier code" aria-hidden="true">
+  <div class="ck-head">
+    <span class="ck-title">Clavier code</span>
+    <button type="button" class="ck-main" id="ckMain" aria-label="Revenir au clavier principal" title="Revenir au clavier principal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M18 13h.01M9 13h6M7 17h10"/></svg>
+      Clavier principal
+    </button>
+  </div>
+  <div id="ckBody"></div>
+</div>
+<div id="viewer" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Aperçu du fichier">
+    <div class="vhead">
+      <span class="vname" id="vName"></span>
+      <span class="vmeta" id="vMeta"></span>
+      <span class="spacer"></span>
+      <button class="btn" id="vCopy">Copier</button>
+      <a class="btn" id="vDl" href="#" download>Télécharger</a>
+      <button class="btn" id="vMonaco">Ouvrir dans Monaco</button>
+      <button class="btn" id="vOpen">Ouvrir dans Fichiers</button>
+      <button class="btn" id="vClose" title="Fermer">&#10005;</button>
+    </div>
+    <div class="vbody" id="vBody"></div>
+  </div>
+</div>
+<div id="devices" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Appareils autorisés">
+    <div class="vhead">
+      <span class="vname">Appareils autorisés</span>
+      <span class="vmeta" id="devicesMeta"></span>
+      <span class="spacer"></span>
+      <button class="btn" id="devicesRefresh">Actualiser</button>
+      <button class="btn danger" id="devicesRevokeAll">Tout révoquer</button>
+      <button class="btn" id="devicesClose" title="Fermer">&#10005;</button>
+    </div>
+    <div class="vbody devbody">
+      <div class="dev-msg" id="devicesMsg" role="status"></div>
+      <div class="pk-block">
+        <div class="pk-head">
+          <span class="pk-title">Passkeys <span id="pkCount"></span></span>
+          <button class="btn" id="addPasskey">Ajouter une passkey</button>
+        </div>
+        <div class="pk-note" id="pkNote"></div>
+        <div id="passkeysList"></div>
+      </div>
+      <div id="devicesList"></div>
+    </div>
+  </div>
+</div>
+<div id="stepup" aria-hidden="true">
+  <div class="gate-box" role="dialog" aria-modal="true" aria-label="Confirmation du mot de passe maître">
+    <div class="gate-title">CONFIRMATION <span>MAÎTRE</span></div>
+    <div class="gate-sub" id="stepSub">Ressaisissez le mot de passe maître pour continuer.</div>
+    <form id="stepForm" autocomplete="off">
+      <label>Mot de passe maître
+        <input type="password" id="stepPass" autocomplete="current-password" required>
+      </label>
+      <label id="stepTotpRow" class="hidden">Code TOTP
+        <input type="text" id="stepTotp" inputmode="numeric" autocomplete="one-time-code" placeholder="123456">
+      </label>
+      <button type="submit" class="btn gate-submit" id="stepSubmit">Confirmer</button>
+      <button type="button" class="btn" id="stepCancel">Annuler</button>
+      <div class="gate-msg" id="stepMsg" role="status"></div>
+    </form>
+  </div>
+</div>
+<div id="ssh" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="SSH distant">
+    <div class="vhead">
+      <span class="vname">SSH — terminal distant</span>
+      <span class="vmeta" id="sshMeta"></span>
+      <span class="spacer"></span>
+      <button class="btn" id="sshClose" title="Fermer">&#10005;</button>
+    </div>
+    <div class="vbody sshbody">
+      <div id="sshNotTailnet" class="hidden">
+        <p><strong>SSH accessible uniquement via Tailscale.</strong></p>
+        <p>Ouvrez <a id="sshTsLink" href="https://neva.example-tailnet.ts.net:8443/" target="_blank" rel="noopener">https://neva.example-tailnet.ts.net:8443/</a> depuis un appareil connecté à votre tailnet, puis utilisez le bouton SSH.</p>
+        <p class="note">L’identité Tailscale admin et le mot de passe maître y sont vérifiés ; le proxy n’est pas exposé sur Internet.</p>
+      </div>
+      <iframe id="sshFrame" title="SSH" src="about:blank"></iframe>
+    </div>
+  </div>
+</div>
+<div id="gate" class="open" aria-hidden="false">
+  <div class="gate-box" role="dialog" aria-modal="true" aria-label="Déverrouillage Marexcode">
+    <div class="gate-title">MAREXCODE <span>VERROUILLÉ</span></div>
+    <div class="gate-sub" id="gateSub">Vérification…</div>
+    <form id="gateForm" autocomplete="off">
+      <label>Mot de passe maître
+        <input type="password" id="gatePass" autocomplete="current-password" required>
+      </label>
+      <label id="gateTotpRow" class="hidden">Code TOTP
+        <input type="text" id="gateTotp" inputmode="numeric" autocomplete="one-time-code" placeholder="123456">
+      </label>
+      <label class="gate-remember">
+        <input type="checkbox" id="gateRemember" checked>
+        Se souvenir de cet appareil
+        <input type="number" id="gateDays" min="0" max="90" value="30"> jours
+      </label>
+      <button type="submit" class="btn gate-submit" id="gateSubmit" disabled>Déverrouiller</button>
+      <button type="button" class="btn" id="gatePasskey">Utiliser une passkey</button>
+      <div class="gate-msg" id="gateMsg" role="status"></div>
+    </form>
+  </div>
+</div>
+<script>
+// ================= Configuration =================
+// Chaque onglet = une session tmux indépendante (ttyd-marexcode@N.service).
+// Une session survit à la fermeture de l'onglet ou au rechargement de la page ;
+// on la retrouve en revenant sur le même onglet (tmux new-session -A).
+// Pour ajouter une session : créer ttyd-marexcode@5.service (port 7685,
+// base /terminal/5), un bloc "location /terminal/5/" dans nginx, puis
+// ajouter { name: "S5", url: "/terminal/5/" } ci-dessous.
+const CONFIG = {
+  filesURL: "/browser/",
+  metricsURL: "/metrics",
+  terminals: [
+    { name: "S1", url: "/terminal/1/" },
+    { name: "S2", url: "/terminal/2/" },
+    { name: "S3", url: "/terminal/3/" },
+    { name: "S4", url: "/terminal/4/" }
+  ]
+};
+
+// ================= Réglages (préférences locales) =================
+const SET_KEY = "marex.settings";
+const SET_DEFAULTS = {
+  monacoFont: 12.5, monacoMinimap: true, monacoWrap: false, monacoTab: 2,
+  terminalTab: 0, monInterval: 3000,
+  monSegs: { cpu: true, ram: true, disk: true, net: true, load: true, up: true },
+  filesOpen: true
+};
+function cloneDefaults() {
+  return { ...SET_DEFAULTS, monSegs: { ...SET_DEFAULTS.monSegs } };
+}
+function loadSettings() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SET_KEY) || "{}");
+    const d = cloneDefaults();
+    return { ...d, ...raw, monSegs: { ...d.monSegs, ...(raw.monSegs || {}) } };
+  } catch (_) { return cloneDefaults(); }
+}
+let SETTINGS = loadSettings();
+function saveSettings() {
+  try { localStorage.setItem(SET_KEY, JSON.stringify(SETTINGS)); } catch (_) {}
+}
+function defaultTerminalIndex() {
+  const n = Number(SETTINGS.terminalTab);
+  return Number.isFinite(n) ? Math.max(0, Math.min(CONFIG.terminals.length - 1, n)) : 0;
+}
+function monSeg(key) { return Boolean(SETTINGS.monSegs && SETTINGS.monSegs[key]); }
+// =============== Fin configuration ===============
+const tabbar = document.getElementById("tabbar");
+const termwrap = document.getElementById("termwrap");
+const frames = [];
+let panesActive = false;
+CONFIG.terminals.forEach((t, i) => {
+  const tab = document.createElement("button");
+  tab.className = "tab" + (i === defaultTerminalIndex() ? " active" : "");
+  tab.textContent = t.name;
+  tab.setAttribute("role", "tab");
+  const f = document.createElement("iframe");
+  f.title = t.name;
+  f.className = i === defaultTerminalIndex() ? "active" : "";
+  f.dataset.src = t.url; // chargement paresseux : après déverrouillage
+  tab.onclick = () => {
+    tabbar.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+    termwrap.querySelectorAll("iframe").forEach(x => x.classList.remove("active"));
+    tab.classList.add("active");
+    f.classList.add("active");
+    const src = f.getAttribute("src");
+    if (panesActive && (!src || src === "about:blank")) f.src = f.dataset.src;
+  };
+  tabbar.appendChild(tab);
+  termwrap.appendChild(f);
+  frames.push(f);
+});
+// Panneaux repliables
+const filesPane = document.getElementById("files");
+const monPane = document.getElementById("monitor");
+const btnFiles = document.getElementById("btnFiles");
+const btnMon = document.getElementById("btnMon");
+const isMobile = () => window.matchMedia("(max-width: 820px)").matches;
+btnFiles.onclick = () => {
+  filesPane.classList.toggle("hidden");
+  btnFiles.classList.toggle("active");
+};
+btnMon.onclick = () => {
+  monPane.classList.toggle("hidden");
+  btnMon.classList.toggle("active");
+};
+// Sur mobile : démarrer sur le terminal seul (fichiers en overlay) ;
+// la barre de monitoring reste visible (une seule ligne).
+if (isMobile()) {
+  filesPane.classList.add("hidden");
+  btnFiles.classList.remove("active");
+}
+// Recharger le panneau visible
+document.getElementById("btnRefresh").onclick = () => {
+  const active = termwrap.querySelector("iframe.active");
+  if (active && active.src) active.src = active.src;
+};
+
+// ================= Barre de monitoring (une ligne, via Netdata) =================
+const monbar = document.getElementById("monbar");
+const METRICS_BASE = (CONFIG.metricsURL || "/metrics").replace(/\/+$/, "");
+let monTimer = null;
+
+const ICONS = {
+  cpu:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="7" width="10" height="10" rx="1"/><path d="M4 10h3M4 14h3M17 10h3M17 14h3M10 4v3M14 4v3M10 17v3M14 17v3"/></svg>',
+  ram:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="7" width="18" height="10" rx="1"/><path d="M7 7v10M11 7v10M15 7v10"/></svg>',
+  disk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></svg>',
+  net:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20V8M4 11l3-3 3 3M17 4v12M14 13l3 3 3-3"/></svg>',
+  load: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>',
+  up:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
+};
+const ic = (k) => ICONS[k] || "";
+
+const fmtGo = (mib) => (mib / 1024).toFixed(1) + " Go";
+const fmtRate = (kbs) => {
+  const v = Math.abs(kbs || 0);
+  return v >= 1024 ? (v / 1024).toFixed(1) + " Mb/s" : Math.round(v) + " Kb/s";
+};
+const fmtUptime = (s) => {
+  s = Math.floor(s || 0);
+  const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+  return d > 0 ? d + "j " + h + "h" : h > 0 ? h + "h " + m + "m" : m + "m";
+};
+const pctClass = (p) => p >= 90 ? "hi" : p >= 75 ? "warn" : "";
+
+async function chartData(name) {
+  const u = METRICS_BASE + "/api/v1/data?chart=" + encodeURIComponent(name)
+          + "&after=-1&points=1&format=json&group=average";
+  const r = await fetch(u, { credentials: "same-origin", cache: "no-store" });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const j = await r.json();
+  const m = {};
+  (j.labels || []).forEach((l, i) => { m[l] = ((j.data && j.data[0]) || [])[i]; });
+  return m;
+}
+
+function renderMetrics(cpu, ram, disk, net, load, up) {
+  let cpuSum = 0, idle = 0;
+  for (const k in cpu) {
+    if (k === "time") continue;
+    cpuSum += cpu[k] || 0;
+    if (k === "idle") idle = cpu[k] || 0;
+  }
+  const cpuPct = Math.max(0, Math.min(100, idle ? cpuSum - idle : cpuSum));
+
+  const ramTotal = (ram.free || 0) + (ram.used || 0) + (ram.cached || 0) + (ram.buffers || 0);
+  const ramUsed = ram.used || 0;
+  const ramPct = ramTotal ? ramUsed / ramTotal * 100 : 0;
+
+  const dTotal = (disk.avail || 0) + (disk.used || 0) + (disk["reserved for root"] || 0);
+  const dUsed = disk.used || 0;
+  const dPct = dTotal ? dUsed / dTotal * 100 : 0;
+
+  const rx = Math.abs(net.received || 0);
+  const tx = Math.abs(net.sent || 0);
+  const load1 = load.load1 || 0;
+
+  const seg = (icon, label, val, cls) =>
+    '<span class="seg ' + (cls || "") + '">' + ic(icon) + label + " <b>" + val + "</b></span>";
+  const segs = [];
+  if (monSeg("cpu"))  segs.push(seg("cpu",  "CPU",    Math.round(cpuPct) + "%", pctClass(cpuPct)));
+  if (monSeg("ram"))  segs.push(seg("ram",  "RAM",    fmtGo(ramUsed) + "/" + fmtGo(ramTotal) + " (" + Math.round(ramPct) + "%)", pctClass(ramPct)));
+  if (monSeg("disk")) segs.push(seg("disk", "Disque", Math.round(dUsed) + "/" + Math.round(dTotal) + " Go (" + Math.round(dPct) + "%)", pctClass(dPct)));
+  if (monSeg("net"))  segs.push(seg("net",  "Réseau", "↓" + fmtRate(rx) + " ↑" + fmtRate(tx)));
+  if (monSeg("load")) segs.push(seg("load", "Load",   load1.toFixed(2)));
+  if (monSeg("up"))   segs.push(seg("up",   "Uptime", fmtUptime(up.uptime)));
+  monbar.innerHTML = segs.length ? segs.join('<span class="sep">·</span>') : '<span class="muted">monitoring masqué</span>';
+  monbar.title = "Monitoring de l'hôte Marexcode (LXC 102) — Netdata";
+}
+
+async function refreshMetrics() {
+  try {
+    const [cpu, ram, disk, net, load, up] = await Promise.all([
+      chartData("system.cpu"),
+      chartData("system.ram"),
+      chartData("disk_space./"),
+      chartData("system.net"),
+      chartData("system.load"),
+      chartData("system.uptime")
+    ]);
+    renderMetrics(cpu, ram, disk, net, load, up);
+  } catch (e) {
+    monbar.innerHTML = '<span class="err">monitoring indisponible</span>';
+  }
+}
+
+function startMetrics() {
+  refreshMetrics();
+  if (monTimer) clearInterval(monTimer);
+  const ms = Number(SETTINGS.monInterval) || 3000;
+  monTimer = setInterval(refreshMetrics, ms);
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    if (monTimer) { clearInterval(monTimer); monTimer = null; }
+  } else if (!monTimer) {
+    startMetrics();
+  }
+});
+startMetrics();
+
+// ================= Visionneuse de fichiers =================
+const viewer  = document.getElementById("viewer");
+const vBody   = document.getElementById("vBody");
+const vName   = document.getElementById("vName");
+const vMeta   = document.getElementById("vMeta");
+const vCopy   = document.getElementById("vCopy");
+const vDl     = document.getElementById("vDl");
+const vOpen   = document.getElementById("vOpen");
+const vClose  = document.getElementById("vClose");
+const filesFrame = document.getElementById("filesFrame");
+const FB_ROOT = (CONFIG.filesURL || "/browser/").replace(/\/+$/, "");
+let vText = null;
+let vPath = null;
+
+const IMG_EXT = new Set(["png","jpg","jpeg","gif","webp","svg","bmp","ico","avif","apng"]);
+const MEDIA_EXT = {
+  mp4:"video", webm:"video", ogv:"video", mov:"video",
+  mp3:"audio", wav:"audio", ogg:"audio", oga:"audio", m4a:"audio", flac:"audio"
+};
+const MAX_PREVIEW = 8 * 1024 * 1024; // 8 Mo
+
+const encPath = (p) => p.split("/").map(encodeURIComponent).join("/");
+const rawURL = (p, inline = true) =>
+  "/browser/api/raw" + encPath(p) + (inline ? "?inline=true" : "?download=true");
+const fmtBytes = (n) => n < 1024 ? n + " o"
+  : n < 1048576 ? (n / 1024).toFixed(1) + " Ko"
+  : (n / 1048576).toFixed(1) + " Mo";
+const showMsg = (t) => {
+  vBody.innerHTML = "";
+  const d = document.createElement("div");
+  d.className = "vmsg";
+  d.textContent = t;
+  vBody.appendChild(d);
+};
+const extOf = (name) => name.includes(".") ? name.split(".").pop().toLowerCase() : "";
+
+function closeViewer() {
+  marexFadeClose(viewer);
+  viewer.setAttribute("aria-hidden", "true");
+  vBody.innerHTML = "";
+  vText = null;
+}
+
+async function openPreview(path, name) {
+  vPath = path;
+  vText = null;
+  const ext = extOf(name);
+  vName.textContent = name;
+  vMeta.textContent = "";
+  vCopy.style.display = "none";
+  vDl.href = rawURL(path, false);
+  vDl.setAttribute("download", name);
+  marexShowModal(viewer);
+  viewer.setAttribute("aria-hidden", "false");
+  showMsg("Chargement…");
+  try { vClose.focus({ preventScroll: true }); } catch (_) {}
+
+  const url = rawURL(path);
+
+  try {
+    // Métadonnées (taille) — facultatif
+    let size = null;
+    try {
+      const r = await fetch("/browser/api/resources" + encPath(path), { credentials: "same-origin" });
+      if (r.ok) { const m = await r.json(); size = m.size ?? null; }
+    } catch (_) {}
+    if (size != null) vMeta.textContent = fmtBytes(size);
+
+    if (IMG_EXT.has(ext)) {
+      vBody.innerHTML = "";
+      const img = new Image();
+      img.alt = name;
+      img.onload  = () => { vMeta.textContent = img.naturalWidth + " × " + img.naturalHeight
+        + (size != null ? " · " + fmtBytes(size) : ""); };
+      img.onerror = () => showMsg("Impossible d'afficher cette image.");
+      img.src = url;
+      vBody.appendChild(img);
+      return;
+    }
+    if (ext === "pdf") {
+      vBody.innerHTML = "";
+      const f = document.createElement("iframe");
+      f.src = url;
+      f.title = name;
+      vBody.appendChild(f);
+      return;
+    }
+    if (MEDIA_EXT[ext]) {
+      vBody.innerHTML = "";
+      const el = document.createElement(MEDIA_EXT[ext]);
+      el.src = url;
+      el.controls = true;
+      vBody.appendChild(el);
+      return;
+    }
+    if (size != null && size > MAX_PREVIEW) {
+      showMsg("Fichier trop volumineux pour un aperçu (" + fmtBytes(size)
+        + "). Utilisez « Télécharger » ou « Ouvrir dans Fichiers ».");
+      return;
+    }
+
+    const res = await fetch(url, { credentials: "same-origin" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+
+    if (ct.startsWith("image/")) {
+      vBody.innerHTML = "";
+      const img = new Image();
+      img.alt = name;
+      img.src = url;
+      vBody.appendChild(img);
+      return;
+    }
+    if (ct.startsWith("video/") || ct.startsWith("audio/")) {
+      vBody.innerHTML = "";
+      const el = document.createElement(ct.startsWith("video/") ? "video" : "audio");
+      el.src = url;
+      el.controls = true;
+      vBody.appendChild(el);
+      return;
+    }
+
+    const buf = await res.arrayBuffer();
+    if (size == null) vMeta.textContent = fmtBytes(buf.byteLength);
+
+    let binary = false;
+    const n = Math.min(buf.byteLength, 4096);
+    const head = new Uint8Array(buf, 0, n);
+    for (let i = 0; i < n; i++) if (head[i] === 0) { binary = true; break; }
+    if (binary) {
+      showMsg("Fichier binaire — utilisez « Télécharger » pour l'ouvrir.");
+      return;
+    }
+
+    const text = new TextDecoder("utf-8").decode(buf);
+    vText = text;
+    vBody.innerHTML = "";
+    const pre = document.createElement("pre");
+    pre.textContent = text;
+    vBody.appendChild(pre);
+    vCopy.style.display = "";
+  } catch (e) {
+    showMsg("Erreur d'ouverture : " + (e && e.message ? e.message : String(e)));
+  }
+}
+
+vClose.onclick = closeViewer;
+vDl.onclick = (e) => e.stopPropagation();
+vCopy.onclick = async () => {
+  if (vText == null) return;
+  try {
+    await navigator.clipboard.writeText(vText);
+    const old = vCopy.textContent;
+    vCopy.textContent = "Copié !";
+    setTimeout(() => { vCopy.textContent = old; }, 1500);
+  } catch (_) { vCopy.textContent = "Échec"; }
+};
+vOpen.onclick = () => {
+  if (vPath != null) filesFrame.src = FB_ROOT + "/files" + encPath(vPath);
+  closeViewer();
+};
+viewer.addEventListener("click", (e) => { if (e.target === viewer) closeViewer(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && viewer.classList.contains("open")) closeViewer();
+});
+
+// Interception des clics sur les fichiers dans File Browser :
+// un dossier navigue normalement, un fichier s'ouvre dans le modal.
+function hookFileBrowser() {
+  let doc = null;
+  try { doc = filesFrame.contentDocument; } catch (_) { return; }
+  if (!doc || doc.__marexViewerHooked) return;
+  doc.__marexViewerHooked = true;
+  doc.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && viewer.classList.contains("open")) {
+      e.preventDefault();
+      closeViewer();
+    }
+  }, true);
+  doc.addEventListener("click", (e) => {
+    const item = e.target.closest ? e.target.closest(".item") : null;
+    if (!item || item.classList.contains("header")) return;
+    if (item.getAttribute("data-dir") === "true") return; // dossier : comportement natif
+    const nameEl = item.querySelector(".name");
+    const name = item.getAttribute("aria-label") || (nameEl ? nameEl.textContent : "");
+    if (!name) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    let dir = "";
+    try {
+      const p = decodeURIComponent(filesFrame.contentWindow.location.pathname);
+      if (p.startsWith(FB_ROOT + "/files")) dir = p.slice((FB_ROOT + "/files").length);
+    } catch (_) {}
+    const path = ("/" + dir.replace(/^\/+/, "") + "/" + name).replace(/\/{2,}/g, "/");
+    if (!monacoPane.classList.contains("hidden")) openInMonaco(path, name);
+    else openPreview(path, name);
+  }, true);
+}
+filesFrame.addEventListener("load", () => { hookFileBrowser(); try { syncFileBrowserTheme(); } catch (_) {} });
+hookFileBrowser();
+
+// ================= Gate maître =================
+const gateEl = document.getElementById("gate");
+const gateForm = document.getElementById("gateForm");
+const gatePass = document.getElementById("gatePass");
+const gateTotpRow = document.getElementById("gateTotpRow");
+const gateTotp = document.getElementById("gateTotp");
+const gateRemember = document.getElementById("gateRemember");
+const gateDays = document.getElementById("gateDays");
+const gateSubmit = document.getElementById("gateSubmit");
+const gateMsg = document.getElementById("gateMsg");
+const gateSub = document.getElementById("gateSub");
+const btnLock = document.getElementById("btnLock");
+let filesLoaded = false;
+let gatePoll = null;
+let gateCsrf = "";
+let gateTotpEnabled = false;
+
+function showGate(message) {
+  gateEl.classList.add("open");
+  gateEl.setAttribute("aria-hidden", "false");
+  if (message) gateMsg.textContent = message;
+  setTimeout(() => { try { gatePass.focus({ preventScroll: true }); } catch (_) {} }, 50);
+}
+
+function hideGate() {
+  gateEl.classList.remove("open");
+  gateEl.setAttribute("aria-hidden", "true");
+  gateMsg.textContent = "";
+}
+
+function stopPanes() {
+  panesActive = false;
+  try { if (viewer.classList.contains("open")) closeViewer(); } catch (_) {}
+  termwrap.querySelectorAll("iframe").forEach((f) => { f.src = "about:blank"; });
+  if (filesFrame) filesFrame.src = "about:blank";
+  filesLoaded = false;
+}
+
+function startPanes() {
+  if (panesActive) return;
+  panesActive = true;
+  if (filesFrame && !filesLoaded) {
+    filesFrame.src = CONFIG.filesURL;
+    filesLoaded = true;
+  }
+  const active = termwrap.querySelector("iframe.active");
+  if (active) {
+    const src = active.getAttribute("src");
+    if (!src || src === "about:blank") active.src = active.dataset.src;
+  }
+}
+
+function lockUI(message) {
+  stopPanes();
+  try { closeMonaco(true); } catch (_) {}
+  showGate(message || "");
+}
+
+function applyGateStatus(st) {
+  const configured = st && st.configured !== false;
+  gateSubmit.disabled = !configured;
+  gatePass.disabled = !configured;
+  gateDays.disabled = !configured || !gateRemember.checked;
+  gateTotpRow.classList.toggle("hidden", !(st && st.totp_enabled));
+  gateTotpEnabled = Boolean(st && st.totp_enabled);
+  if (st && st.csrf) gateCsrf = st.csrf;
+  gatePasskeys = Number(st && st.passkeys) || 0;
+  updatePasskeyButton();
+
+  if (!configured) {
+    gateSub.textContent = "Mot de passe maître non configuré";
+    gateSubmit.disabled = true;
+    showGate("Exécutez « marexgate passwd » sur la machine 102.");
+    return;
+  }
+
+  const max = Number(st.max_trust_days) || 90;
+  const def = Number(st.trust_days) || 30;
+  gateDays.max = String(max);
+  if (!gateDays.value || Number(gateDays.value) > max) gateDays.value = String(Math.min(def, max));
+  gateSub.textContent = "Mot de passe maître requis";
+
+  if (st.locked) {
+    lockUI("");
+  } else {
+    hideGate();
+    startPanes();
+  }
+}
+
+async function fetchGateStatus() {
+  const r = await fetch("/gate/status", { credentials: "same-origin", cache: "no-store" });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+
+function startGatePolling() {
+  if (gatePoll) return;
+  gatePoll = setInterval(async () => {
+    if (!panesActive || document.hidden) return;
+    try {
+      const st = await fetchGateStatus();
+      if (st.locked) lockUI("Session expirée — ressaisissez le mot de passe maître.");
+    } catch (_) {}
+  }, 60000);
+}
+
+async function initGate() {
+  try {
+    applyGateStatus(await fetchGateStatus());
+    startGatePolling();
+  } catch (_) {
+    gateSub.textContent = "Gate indisponible";
+    gateSubmit.disabled = true;
+    showGate("Impossible de joindre le gate — nouvelle tentative…");
+    setTimeout(initGate, 5000);
+  }
+}
+
+gateRemember.addEventListener("change", () => {
+  gateDays.disabled = !gateRemember.checked;
+});
+
+gateForm.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  gateMsg.textContent = "";
+  gateSubmit.disabled = true;
+  const max = Number(gateDays.max) || 90;
+  let trustDays = 0;
+  if (gateRemember.checked) {
+    trustDays = Math.max(0, Math.min(Number(gateDays.value) || 0, max));
+  }
+  try {
+    const r = await fetch("/gate/login", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        password: gatePass.value,
+        totp: gateTotp.value.trim(),
+        trust_days: trustDays
+      })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok) {
+      gatePass.value = "";
+      gateTotp.value = "";
+      if (j.csrf) gateCsrf = j.csrf;
+      if (typeof j.totp_enabled === "boolean") gateTotpEnabled = j.totp_enabled;
+      hideGate();
+      startPanes();
+    } else if (r.status === 401) {
+      gateMsg.textContent = j.error === "invalid_totp"
+        ? "Code TOTP invalide."
+        : "Mot de passe incorrect.";
+      marexShake(gateEl.querySelector(".gate-box"));
+    } else if (r.status === 429) {
+      marexShake(gateEl.querySelector(".gate-box"));
+      gateMsg.textContent = "Trop de tentatives — réessayez dans " + Math.ceil(Number(j.retry_after) || 60) + " s.";
+    } else if (r.status === 503) {
+      gateMsg.textContent = "Maître non configuré sur le serveur.";
+    } else {
+      gateMsg.textContent = "Échec du déverrouillage (" + (j.error || r.status) + ").";
+    }
+  } catch (_) {
+    gateMsg.textContent = "Gate injoignable.";
+  } finally {
+    gateSubmit.disabled = false;
+    gatePass.focus();
+  }
+});
+
+
+// ================= Passkeys (WebAuthn) =================
+const passkeySupported = Boolean(window.PublicKeyCredential && navigator.credentials);
+const gatePasskey = document.getElementById("gatePasskey");
+let gatePasskeys = 0;
+
+function b64uToBuf(value) {
+  const s = String(value).replace(/-/g, "+").replace(/_/g, "/");
+  const pad = s.length % 4 ? "=".repeat(4 - (s.length % 4)) : "";
+  const bin = atob(s + pad);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out.buffer;
+}
+
+function bufToB64u(buf) {
+  const bytes = new Uint8Array(buf);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function waError(err) {
+  if (!err) return "Passkey indisponible.";
+  if (err.name === "NotAllowedError") return "Passkey annulée ou délai dépassé.";
+  if (err.name === "SecurityError") return "Origine non autorisée pour cette passkey.";
+  if (err.name === "InvalidStateError") return "Cette passkey est déjà enregistrée.";
+  if (err.name === "AbortError") return "Passkey interrompue.";
+  return "Échec WebAuthn (" + (err.name || "erreur") + ").";
+}
+
+function updatePasskeyButton() {
+  gatePasskey.classList.toggle("hidden", !passkeySupported || gatePasskeys < 1);
+}
+
+async function passkeyLogin() {
+  gateMsg.textContent = "";
+  gatePasskey.disabled = true;
+  const max = Number(gateDays.max) || 90;
+  let trustDays = 0;
+  if (gateRemember.checked) trustDays = Math.max(0, Math.min(Number(gateDays.value) || 0, max));
+  try {
+    const ro = await fetch("/gate/webauthn/login/options", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: "{}"
+    });
+    const opts = await ro.json().catch(() => ({}));
+    if (ro.status === 404) {
+      gateMsg.textContent = "Aucune passkey pour ce domaine. Déverrouillez avec le mot de passe maître, puis ajoutez-en une dans « Appareils ».";
+      return;
+    }
+    if (!ro.ok) {
+      gateMsg.textContent = "Passkey indisponible (" + (opts.error || ro.status) + ").";
+      return;
+    }
+    const publicKey = {
+      challenge: b64uToBuf(opts.challenge),
+      rpId: opts.rpId,
+      allowCredentials: (opts.allowCredentials || []).map((c) => ({ ...c, id: b64uToBuf(c.id) })),
+      timeout: opts.timeout,
+      userVerification: opts.userVerification,
+      extensions: opts.extensions
+    };
+    const cred = await navigator.credentials.get({ publicKey });
+    const payload = {
+      id: cred.id,
+      rawId: bufToB64u(cred.rawId),
+      type: cred.type,
+      authenticatorAttachment: cred.authenticatorAttachment || undefined,
+      clientExtensionResults: cred.getClientExtensionResults ? cred.getClientExtensionResults() : {},
+      response: {
+        clientDataJSON: bufToB64u(cred.response.clientDataJSON),
+        authenticatorData: bufToB64u(cred.response.authenticatorData),
+        signature: bufToB64u(cred.response.signature),
+        userHandle: cred.response.userHandle ? bufToB64u(cred.response.userHandle) : undefined
+      }
+    };
+    const rv = await fetch("/gate/webauthn/login/verify", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ credential: payload, trust_days: trustDays })
+    });
+    const j = await rv.json().catch(() => ({}));
+    if (rv.ok) {
+      if (j.csrf) gateCsrf = j.csrf;
+      if (typeof j.totp_enabled === "boolean") gateTotpEnabled = j.totp_enabled;
+      gatePass.value = "";
+      gateTotp.value = "";
+      hideGate();
+      startPanes();
+    } else if (rv.status === 401) {
+      gateMsg.textContent = "Passkey refusée.";
+    } else if (rv.status === 429) {
+      gateMsg.textContent = "Trop de tentatives — réessayez plus tard.";
+    } else {
+      gateMsg.textContent = "Échec de la connexion (" + (j.error || rv.status) + ").";
+    }
+  } catch (err) {
+    gateMsg.textContent = waError(err);
+  } finally {
+    gatePasskey.disabled = false;
+  }
+}
+
+if (!passkeySupported) gatePasskey.classList.add("hidden");
+gatePasskey.addEventListener("click", passkeyLogin);
+
+btnLock.addEventListener("click", async () => {
+  try {
+    await fetch("/gate/logout", { method: "POST", credentials: "same-origin", headers: { "X-CSRF": gateCsrf } });
+  } catch (_) {}
+  lockUI("Verrouillé — ressaisissez le mot de passe maître.");
+  setTimeout(initGate, 100);
+});
+
+document.addEventListener("visibilitychange", async () => {
+  if (document.hidden || !panesActive) return;
+  try {
+    const st = await fetchGateStatus();
+    if (st.locked) lockUI("Session expirée — ressaisissez le mot de passe maître.");
+  } catch (_) {}
+});
+
+
+// ================= Appareils / step-up =================
+const devicesEl = document.getElementById("devices");
+const devicesList = document.getElementById("devicesList");
+const devicesMeta = document.getElementById("devicesMeta");
+const devicesMsg = document.getElementById("devicesMsg");
+const devicesRefresh = document.getElementById("devicesRefresh");
+const devicesRevokeAll = document.getElementById("devicesRevokeAll");
+const devicesClose = document.getElementById("devicesClose");
+const btnDevices = document.getElementById("btnDevices");
+const stepupEl = document.getElementById("stepup");
+const stepForm = document.getElementById("stepForm");
+const stepPass = document.getElementById("stepPass");
+const stepTotpRow = document.getElementById("stepTotpRow");
+const stepTotp = document.getElementById("stepTotp");
+const stepSubmit = document.getElementById("stepSubmit");
+const stepCancel = document.getElementById("stepCancel");
+const stepMsg = document.getElementById("stepMsg");
+const stepSub = document.getElementById("stepSub");
+let devicesCurrent = null;
+let stepUpToken = "";
+let stepUpExp = 0;
+let stepResolver = null;
+
+const fmtDate = (ts) => ts
+  ? new Date(Number(ts) * 1000).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })
+  : "-";
+
+function fmtRel(ts) {
+  if (!ts) return "jamais";
+  const d = Math.floor(Date.now() / 1000) - Number(ts);
+  if (d < 60) return "à l'instant";
+  if (d < 3600) return "il y a " + Math.floor(d / 60) + " min";
+  if (d < 86400) return "il y a " + Math.floor(d / 3600) + " h";
+  const days = Math.floor(d / 86400);
+  return days === 1 ? "hier" : "il y a " + days + " j";
+}
+
+function escHtml(text) {
+  return String(text).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+function openDevices() {
+  marexShowModal(devicesEl);
+  devicesEl.setAttribute("aria-hidden", "false");
+  devicesMsg.textContent = "";
+  loadDevices();
+  loadPasskeys();
+}
+
+function closeDevices() {
+  marexFadeClose(devicesEl);
+  devicesEl.setAttribute("aria-hidden", "true");
+}
+
+async function loadDevices() {
+  devicesMsg.textContent = "";
+  try {
+    const r = await fetch("/gate/devices", { credentials: "same-origin", cache: "no-store" });
+    if (r.status === 401) {
+      closeDevices();
+      lockUI("Session expirée — ressaisissez le mot de passe maître.");
+      return;
+    }
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const j = await r.json();
+    devicesCurrent = j.current;
+    renderDevices(j.devices || []);
+  } catch (_) {
+    devicesMsg.textContent = "Impossible de charger les appareils.";
+  }
+}
+
+function renderDevices(list) {
+  devicesMeta.textContent = list.length + " appareil" + (list.length > 1 ? "s" : "") + " actif" + (list.length > 1 ? "s" : "");
+  if (!list.length) {
+    devicesList.innerHTML = '<div class="dev-msg">Aucun appareil actif.</div>';
+    return;
+  }
+  devicesList.innerHTML = list.map((d) => `
+    <div class="dev-item" data-id="${escHtml(d.id)}">
+      <div class="dev-main">
+        <div class="dev-name">${escHtml(d.name)}${d.current ? '<span class="dev-badge">cet appareil</span>' : ""}</div>
+        <div class="dev-meta">
+          créé ${escHtml(fmtDate(d.created_at))} · vu ${escHtml(fmtRel(d.last_seen_at))}<br>
+          IP ${escHtml(d.last_ip || "-")} · confiance jusqu'au ${escHtml(fmtDate(d.trust_until))}
+        </div>
+      </div>
+      <div class="dev-actions">
+        <button class="btn ${d.current ? "" : "danger"}" data-revoke="${escHtml(d.id)}">${d.current ? "Verrouiller" : "Révoquer"}</button>
+      </div>
+    </div>`).join("");
+}
+
+
+const passkeysList = document.getElementById("passkeysList");
+const pkCount = document.getElementById("pkCount");
+const pkNote = document.getElementById("pkNote");
+const addPasskeyBtn = document.getElementById("addPasskey");
+
+async function loadPasskeys() {
+  try {
+    const r = await fetch("/gate/webauthn/credentials", { credentials: "same-origin", cache: "no-store" });
+    if (!r.ok) return;
+    const j = await r.json();
+    gatePasskeys = (j.credentials || []).length;
+    updatePasskeyButton();
+    renderPasskeys(j);
+  } catch (_) {}
+}
+
+function renderPasskeys(j) {
+  const list = j.credentials || [];
+  const hosts = j.supported_hosts || [];
+  pkCount.textContent = list.length ? "(" + list.length + ")" : "";
+  if (j.current_rp) {
+    pkNote.textContent = "Passkeys liées au domaine " + j.current_rp +
+      ". Ajoutez-en une depuis chaque domaine utilisé (" + hosts.join(", ") + ").";
+  } else if (hosts.length) {
+    pkNote.textContent = "Domaine non reconnu pour les passkeys (" + hosts.join(", ") + ").";
+  } else {
+    pkNote.textContent = "";
+  }
+  if (!list.length) {
+    passkeysList.innerHTML = '<div class="pk-note">Aucune passkey enregistrée.</div>';
+    return;
+  }
+  passkeysList.innerHTML = list.map((c) => `
+    <div class="pk-item" data-passkey="${escHtml(c.id)}">
+      <div class="pk-main">
+        <div class="pk-name">${escHtml(c.name)}</div>
+        <div class="pk-meta">${escHtml(c.rp_id)} · créée ${escHtml(fmtDate(c.created_at))} · ${
+          c.last_used_at ? "utilisée " + escHtml(fmtRel(c.last_used_at)) : "jamais utilisée"
+        }</div>
+      </div>
+      <button class="btn danger" data-delpasskey="${escHtml(c.id)}">Supprimer</button>
+    </div>`).join("");
+}
+
+async function addPasskey() {
+  if (!passkeySupported) {
+    devicesMsg.textContent = "WebAuthn non pris en charge par ce navigateur.";
+    return;
+  }
+  addPasskeyBtn.disabled = true;
+  devicesMsg.textContent = "";
+  try {
+    const ro = await fetch("/gate/webauthn/register/options", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", "X-CSRF": gateCsrf },
+      body: "{}"
+    });
+    const opts = await ro.json().catch(() => ({}));
+    if (!ro.ok) {
+      devicesMsg.textContent = "Enregistrement impossible (" + (opts.error || ro.status) + ").";
+      return;
+    }
+    const publicKey = {
+      challenge: b64uToBuf(opts.challenge),
+      rp: opts.rp,
+      user: { ...opts.user, id: b64uToBuf(opts.user.id) },
+      pubKeyCredParams: opts.pubKeyCredParams,
+      timeout: opts.timeout,
+      attestation: opts.attestation,
+      authenticatorSelection: opts.authenticatorSelection,
+      excludeCredentials: (opts.excludeCredentials || []).map((c) => ({ ...c, id: b64uToBuf(c.id) })),
+      extensions: opts.extensions
+    };
+    const cred = await navigator.credentials.create({ publicKey });
+    const payload = {
+      id: cred.id,
+      rawId: bufToB64u(cred.rawId),
+      type: cred.type,
+      authenticatorAttachment: cred.authenticatorAttachment || undefined,
+      clientExtensionResults: cred.getClientExtensionResults ? cred.getClientExtensionResults() : {},
+      response: {
+        clientDataJSON: bufToB64u(cred.response.clientDataJSON),
+        attestationObject: bufToB64u(cred.response.attestationObject),
+        transports: cred.response.getTransports ? cred.response.getTransports() : []
+      }
+    };
+    const name = "Passkey " + new Date().toLocaleDateString("fr-FR");
+    const rv = await fetch("/gate/webauthn/register/verify", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", "X-CSRF": gateCsrf },
+      body: JSON.stringify({ credential: payload, name })
+    });
+    const j = await rv.json().catch(() => ({}));
+    devicesMsg.textContent = rv.ok
+      ? "Passkey ajoutée."
+      : "Échec de l'enregistrement (" + (j.error || rv.status) + ").";
+  } catch (err) {
+    devicesMsg.textContent = waError(err);
+  } finally {
+    addPasskeyBtn.disabled = false;
+    await loadPasskeys();
+  }
+}
+
+async function deletePasskey(id) {
+  const token = await ensureStepUp();
+  if (!token) return;
+  try {
+    const r = await fetch("/gate/webauthn/credentials/" + encodeURIComponent(id) + "/delete", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "X-CSRF": gateCsrf, "X-Step-Up": token }
+    });
+    const j = await r.json().catch(() => ({}));
+    devicesMsg.textContent = r.ok ? "Passkey supprimée." : "Échec (" + (j.error || r.status) + ").";
+  } catch (_) {
+    devicesMsg.textContent = "Gate injoignable.";
+  }
+  await loadPasskeys();
+}
+
+passkeysList.addEventListener("click", (ev) => {
+  const btn = ev.target.closest("[data-delpasskey]");
+  if (btn) deletePasskey(btn.getAttribute("data-delpasskey"));
+});
+addPasskeyBtn.addEventListener("click", addPasskey);
+
+function ensureStepUp() {
+  if (stepUpToken && stepUpExp > Math.floor(Date.now() / 1000)) return Promise.resolve(stepUpToken);
+  return new Promise((resolve) => {
+    stepResolver = resolve;
+    stepPass.value = "";
+    stepTotp.value = "";
+    stepMsg.textContent = "";
+    stepTotpRow.classList.toggle("hidden", !gateTotpEnabled);
+    stepSub.textContent = "Ressaisissez le mot de passe maître pour confirmer.";
+    stepupEl.classList.add("open");
+    stepupEl.setAttribute("aria-hidden", "false");
+    setTimeout(() => { try { stepPass.focus({ preventScroll: true }); } catch (_) {} }, 50);
+  });
+}
+
+function finishStepUp(value) {
+  stepupEl.classList.remove("open");
+  stepupEl.setAttribute("aria-hidden", "true");
+  const resolve = stepResolver;
+  stepResolver = null;
+  if (resolve) resolve(value);
+}
+
+stepForm.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  stepSubmit.disabled = true;
+  stepMsg.textContent = "";
+  try {
+    const r = await fetch("/gate/step-up", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", "X-CSRF": gateCsrf },
+      body: JSON.stringify({ password: stepPass.value, totp: stepTotp.value.trim() })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok) {
+      stepUpToken = j.token;
+      stepUpExp = Number(j.expires_at) || 0;
+      if (typeof j.totp_enabled === "boolean") gateTotpEnabled = j.totp_enabled;
+      stepPass.value = "";
+      stepTotp.value = "";
+      finishStepUp(stepUpToken);
+    } else if (r.status === 401) {
+      stepMsg.textContent = j.error === "invalid_totp" ? "Code TOTP invalide." : "Mot de passe incorrect.";
+      marexShake(stepupEl.querySelector(".gate-box"));
+    } else if (r.status === 429) {
+      stepMsg.textContent = "Trop de tentatives — réessayez plus tard.";
+      marexShake(stepupEl.querySelector(".gate-box"));
+    } else {
+      stepMsg.textContent = "Échec de la confirmation (" + (j.error || r.status) + ").";
+    }
+  } catch (_) {
+    stepMsg.textContent = "Gate injoignable.";
+  } finally {
+    stepSubmit.disabled = false;
+    stepPass.focus();
+  }
+});
+
+stepCancel.addEventListener("click", () => finishStepUp(null));
+
+async function revokeDevice(id) {
+  if (id === devicesCurrent) {
+    try { await fetch("/gate/logout", { method: "POST", credentials: "same-origin", headers: { "X-CSRF": gateCsrf } }); } catch (_) {}
+    closeDevices();
+    lockUI("Verrouillé — ressaisissez le mot de passe maître.");
+    return;
+  }
+  const token = await ensureStepUp();
+  if (!token) return;
+  devicesMsg.textContent = "Révocation…";
+  let feedback = "Appareil révoqué.";
+  try {
+    const r = await fetch("/gate/devices/" + encodeURIComponent(id) + "/revoke", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "X-CSRF": gateCsrf, "X-Step-Up": token }
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok) {
+      feedback = "Appareil révoqué.";
+    } else if (r.status === 403 && j.error === "step_up_required") {
+      stepUpToken = "";
+      feedback = "Confirmation expirée — recommencez.";
+    } else {
+      feedback = "Échec de la révocation (" + (j.error || r.status) + ").";
+    }
+  } catch (_) {
+    feedback = "Gate injoignable.";
+  }
+  await loadDevices();
+  devicesMsg.textContent = feedback;
+}
+
+devicesList.addEventListener("click", (ev) => {
+  const btn = ev.target.closest("[data-revoke]");
+  if (!btn) return;
+  revokeDevice(btn.getAttribute("data-revoke"));
+});
+devicesRefresh.addEventListener("click", loadDevices);
+devicesClose.addEventListener("click", closeDevices);
+devicesEl.addEventListener("click", (ev) => { if (ev.target === devicesEl) closeDevices(); });
+btnDevices.addEventListener("click", () => {
+  if (devicesEl.classList.contains("open")) closeDevices();
+  else openDevices();
+});
+
+devicesRevokeAll.addEventListener("click", async () => {
+  const token = await ensureStepUp();
+  if (!token) return;
+  devicesMsg.textContent = "Révocation de tous les appareils…";
+  try {
+    const r = await fetch("/gate/devices/revoke-all", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "X-CSRF": gateCsrf, "X-Step-Up": token }
+    });
+    if (r.ok) {
+      closeDevices();
+      lockUI("Tous les appareils ont été révoqués.");
+      return;
+    }
+    const j = await r.json().catch(() => ({}));
+    devicesMsg.textContent = "Échec (" + (j.error || r.status) + ").";
+  } catch (_) {
+    devicesMsg.textContent = "Gate injoignable.";
+  }
+  loadDevices();
+});
+
+document.addEventListener("keydown", (ev) => {
+  if (ev.key !== "Escape") return;
+  if (stepupEl.classList.contains("open")) { finishStepUp(null); return; }
+  if (devicesEl.classList.contains("open")) closeDevices();
+});
+
+
+// ================= SSH distant =================
+const SSH_HOST = "neva.example-tailnet.ts.net";
+const sshEl = document.getElementById("ssh");
+const sshFrame = document.getElementById("sshFrame");
+sshFrame.addEventListener("load", () => { try { syncSshTheme(); } catch (_) {} });
+const sshNotTailnet = document.getElementById("sshNotTailnet");
+const btnSsh = document.getElementById("btnSsh");
+const sshClose = document.getElementById("sshClose");
+let sshLoaded = false;
+
+const sshIsTailnet = () => window.location.hostname === SSH_HOST;
+
+function openSsh() {
+  marexShowModal(sshEl);
+  sshEl.setAttribute("aria-hidden", "false");
+  if (!sshIsTailnet()) {
+    sshNotTailnet.classList.remove("hidden");
+    sshFrame.classList.add("hidden");
+    sshFrame.src = "about:blank";
+    sshLoaded = false;
+    return;
+  }
+  sshNotTailnet.classList.add("hidden");
+  sshFrame.classList.remove("hidden");
+  if (!sshLoaded) {
+    sshFrame.src = "/ssh-ui/";
+    sshLoaded = true;
+  }
+}
+
+function closeSsh() {
+  try {
+    if (sshLoaded && sshFrame.contentWindow) {
+      sshFrame.contentWindow.postMessage({ type: "marexssh-close" }, window.location.origin);
+    }
+  } catch (_) {}
+  setTimeout(() => {
+    try { sshFrame.src = "about:blank"; } catch (_) {}
+    sshLoaded = false;
+  }, 150);
+  marexFadeClose(sshEl);
+  sshEl.setAttribute("aria-hidden", "true");
+}
+
+btnSsh.addEventListener("click", () => {
+  if (sshEl.classList.contains("open")) closeSsh();
+  else openSsh();
+});
+sshClose.addEventListener("click", closeSsh);
+sshEl.addEventListener("click", (ev) => { if (ev.target === sshEl) closeSsh(); });
+
+window.addEventListener("message", async (ev) => {
+  if (ev.origin !== window.location.origin) return;
+  if (!sshEl.classList.contains("open")) return;
+  if (!sshFrame.contentWindow || ev.source !== sshFrame.contentWindow) return;
+  const data = ev.data || {};
+  if (data.type === "marexssh-ticket-request") {
+    const id = data.id;
+    try {
+      const r = await fetch("/gate/ssh/ticket", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRF": gateCsrf },
+        body: "{}"
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.ticket) {
+        sshFrame.contentWindow.postMessage({ type: "marexssh-ticket", id, ticket: j.ticket }, window.location.origin);
+      } else if (r.status === 401) {
+        sshFrame.contentWindow.postMessage({ type: "marexssh-ticket-error", id, message: "Session expirée." }, window.location.origin);
+        closeSsh();
+        lockUI("Session expirée — ressaisissez le mot de passe maître.");
+      } else {
+        sshFrame.contentWindow.postMessage({ type: "marexssh-ticket-error", id, message: "Ticket refusé (" + (j.error || r.status) + ")." }, window.location.origin);
+      }
+    } catch (_) {
+      try {
+        sshFrame.contentWindow.postMessage({ type: "marexssh-ticket-error", id, message: "Portail injoignable." }, window.location.origin);
+      } catch (_) {}
+    }
+  } else if (data.type === "marexssh-root-ticket-request") {
+    const id = data.id;
+    (async () => {
+      const step = await ensureStepUp();
+      if (!step) {
+        sshFrame.contentWindow.postMessage({ type: "marexssh-root-denied", id, message: "Confirmation annulée." }, window.location.origin);
+        return;
+      }
+      try {
+        const r = await fetch("/gate/ssh/ticket", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json", "X-CSRF": gateCsrf, "X-Step-Up": step },
+          body: JSON.stringify({ sftp_root: true })
+        });
+        const j = await r.json().catch(() => ({}));
+        if (r.ok && j.ticket) {
+          sshFrame.contentWindow.postMessage({ type: "marexssh-root-ticket", id, ticket: j.ticket }, window.location.origin);
+        } else {
+          sshFrame.contentWindow.postMessage({ type: "marexssh-root-denied", id, message: "Racine refusée (" + (j.error || r.status) + ")." }, window.location.origin);
+        }
+      } catch (_) {
+        sshFrame.contentWindow.postMessage({ type: "marexssh-root-denied", id, message: "Portail injoignable." }, window.location.origin);
+      }
+    })();
+  } else if (data.type === "marexssh-locked") {
+    closeSsh();
+    lockUI("Session expirée — ressaisissez le mot de passe maître.");
+  }
+});
+
+document.addEventListener("keydown", (ev) => {
+  if (ev.key !== "Escape") return;
+  if (sshEl.classList.contains("open")) closeSsh();
+});
+
+
+// ================= Monaco (éditeur VS Code) =================
+const monacoPane = document.getElementById("monaco");
+const btnMonaco = document.getElementById("btnMonaco");
+const monacoBody = document.getElementById("monacoBody");
+const monacoHint = document.getElementById("monacoHint");
+const monacoPathEl = document.getElementById("monacoPath");
+const monacoReloadBtn = document.getElementById("monacoReload");
+const monacoCloseBtn = document.getElementById("monacoClose");
+const rsplitFiles = document.getElementById("rsplitFiles");
+const rsplitMonaco = document.getElementById("rsplitMonaco");
+
+let monacoApi = null;          // namespace monaco
+let monacoEditor = null;       // instance éditeur
+let monacoModel = null;        // modèle courant
+let monacoLoading = null;      // promesse de chargement
+let monacoCurrent = null;      // { path, name }
+
+const MONACO_EXT = {
+  js: "javascript", mjs: "javascript", cjs: "javascript", jsx: "javascript",
+  ts: "typescript", tsx: "typescript", mts: "typescript", cts: "typescript",
+  json: "json", jsonc: "json", json5: "json",
+  md: "markdown", markdown: "markdown",
+  yml: "yaml", yaml: "yaml",
+  sh: "shell", bash: "shell", zsh: "shell", env: "shell",
+  py: "python", rb: "ruby", php: "php", java: "java", kt: "kotlin",
+  c: "c", h: "c", cc: "cpp", cpp: "cpp", hpp: "cpp", cs: "csharp",
+  go: "go", rs: "rust", swift: "swift", lua: "lua", pl: "perl",
+  html: "html", htm: "html", css: "css", scss: "scss", less: "less",
+  xml: "xml", svg: "xml", sql: "sql", ini: "ini", toml: "ini", conf: "ini",
+  dockerfile: "dockerfile", makefile: "makefile", gradle: "groovy",
+  txt: "plaintext", log: "plaintext", csv: "plaintext", tsv: "plaintext"
+};
+const MONACO_MAX_BYTES = 3 * 1024 * 1024;
+
+function monacoLangFor(name) {
+  const n = String(name || "").toLowerCase();
+  if (n === "dockerfile" || n.startsWith("dockerfile.")) return "dockerfile";
+  if (n === "makefile") return "makefile";
+  return MONACO_EXT[extOf(n)] || "plaintext";
+}
+
+function loadMonaco() {
+  if (monacoLoading) return monacoLoading;
+  monacoLoading = new Promise((resolve, reject) => {
+    self.MonacoEnvironment = {
+      getWorker: (_moduleId, label) => new Worker(
+        label === "json" ? "/vendor/monaco/json.worker.js" : "/vendor/monaco/editor.worker.js"
+      )
+    };
+    const done = () => {
+      const api = window.monaco;
+      if (!api) return reject(new Error("monaco absent"));
+      applyMonacoTheme(api);
+      try {
+        api.languages.json.jsonDefaults.setDiagnosticsOptions({
+          validate: true, allowComments: true, trailingCommas: "warning"
+        });
+      } catch (_) {}
+      resolve(api);
+    };
+    self.addEventListener("marex-monaco-ready", done, { once: true });
+
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "/vendor/monaco/monaco.css";
+    document.head.appendChild(css);
+
+    const tag = document.createElement("script");
+    tag.type = "module";
+    tag.src = "/vendor/monaco/monaco.bundle.js";
+    tag.onerror = () => reject(new Error("bundle"));
+    document.head.appendChild(tag);
+
+    setTimeout(() => { if (!window.monaco) reject(new Error("timeout")); }, 25000);
+  }).catch((e) => {
+    monacoLoading = null;
+    throw e;
+  });
+  return monacoLoading;
+}
+
+async function ensureMonaco() {
+  if (monacoEditor) return monacoEditor;
+  const api = await loadMonaco();
+  monacoApi = api;
+  monacoEditor = api.editor.create(monacoBody, {
+    theme: "marex-" + currentTheme(),
+    automaticLayout: true,
+    fontSize: Number(SETTINGS.monacoFont) || 12.5,
+    lineHeight: Math.round((Number(SETTINGS.monacoFont) || 12.5) * 1.5),
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, 'DejaVu Sans Mono', monospace",
+    minimap: { enabled: Boolean(SETTINGS.monacoMinimap), renderCharacters: false, maxColumn: 90 },
+    wordWrap: SETTINGS.monacoWrap ? "on" : "off",
+    tabSize: Number(SETTINGS.monacoTab) || 2,
+    scrollBeyondLastLine: false,
+    smoothScrolling: true,
+    cursorSmoothCaretAnimation: "on",
+    renderLineHighlight: "all",
+    padding: { top: 8, bottom: 8 },
+    tabSize: 2,
+    readOnly: true
+  });
+  applyMonacoOptions();
+  return monacoEditor;
+}
+
+function applyMonacoOptions() {
+  if (!monacoEditor) return;
+  monacoEditor.updateOptions({
+    fontSize: Number(SETTINGS.monacoFont) || 12.5,
+    lineHeight: Math.round((Number(SETTINGS.monacoFont) || 12.5) * 1.5),
+    minimap: { enabled: Boolean(SETTINGS.monacoMinimap), renderCharacters: false, maxColumn: 90 },
+    wordWrap: SETTINGS.monacoWrap ? "on" : "off",
+    tabSize: Number(SETTINGS.monacoTab) || 2
+  });
+}
+
+function monacoShowHint(html) {
+  if (!monacoHint) return;
+  monacoHint.innerHTML = html;
+  monacoHint.style.display = "flex";
+  if (monacoEditor) monacoEditor.setModel(null);
+}
+
+async function openInMonaco(path, name) {
+  if (!path) return;
+  if (monacoPane.classList.contains("hidden")) setMonacoOpen(true);
+  monacoPathEl.value = path;
+  monacoShowHint("Chargement…");
+  try {
+    await ensureMonaco();
+    const r = await fetch(rawURL(path), { credentials: "same-origin", cache: "no-store" });
+    if (!r.ok) {
+      monacoShowHint("Impossible d'ouvrir ce fichier.<br>" + (r.status === 404 ? "Introuvable." : "Erreur " + r.status));
+      return;
+    }
+    const buf = await r.arrayBuffer();
+    if (buf.byteLength > MONACO_MAX_BYTES) {
+      monacoShowHint("Fichier trop volumineux pour Monaco (" + fmtBytes(buf.byteLength) + ").");
+      return;
+    }
+    const bytes = new Uint8Array(buf);
+    if (bytes.includes(0)) {
+      monacoShowHint("Fichier binaire — aperçu non disponible.");
+      return;
+    }
+    const text = new TextDecoder("utf-8").decode(bytes);
+    const lang = monacoLangFor(name || path);
+    if (monacoModel) monacoModel.dispose();
+    monacoModel = monacoApi.editor.createModel(text, lang, monacoApi.Uri.parse("inmemory://marex" + path));
+    monacoEditor.setModel(monacoModel);
+    monacoEditor.setScrollTop(0);
+    monacoHint.style.display = "none";
+    monacoCurrent = { path, name: name || path.split("/").pop() };
+    monacoPathEl.value = path;
+    monacoEditor.focus();
+  } catch (e) {
+    monacoShowHint("Monaco indisponible pour le moment.<br>Réessayez dans un instant.");
+  }
+}
+
+function monacoLayout() {
+  if (monacoEditor) monacoEditor.layout();
+}
+
+function closeMonaco(clear) {
+  monacoPane.classList.add("hidden");
+  btnMonaco.classList.remove("active");
+  rsplitMonaco.classList.add("hidden");
+  monacoLayout();
+  if (clear) {
+    if (monacoModel) { monacoModel.dispose(); monacoModel = null; }
+    if (monacoEditor) monacoEditor.setModel(null);
+    monacoCurrent = null;
+    monacoPathEl.value = "";
+    monacoShowHint("Ouvrez un fichier depuis le panneau <b>Fichiers</b><br>(ou saisissez un chemin ci-dessus)");
+  }
+}
+
+function setMonacoOpen(open) {
+  if (open) {
+    monacoPane.classList.remove("hidden");
+    btnMonaco.classList.add("active");
+    rsplitMonaco.classList.remove("hidden");
+    ensureMonaco().then(() => monacoLayout()).catch(() => {
+      monacoShowHint("Monaco n'a pas pu être chargé.");
+    });
+  } else {
+    closeMonaco(false);
+  }
+  try { localStorage.setItem("marex.monaco.open", open ? "1" : "0"); } catch (_) {}
+  updateSplitters();
+}
+
+btnMonaco.addEventListener("click", () => {
+  setMonacoOpen(monacoPane.classList.contains("hidden"));
+});
+monacoCloseBtn.addEventListener("click", () => setMonacoOpen(false));
+monacoReloadBtn.addEventListener("click", () => {
+  if (monacoCurrent) openInMonaco(monacoCurrent.path, monacoCurrent.name);
+});
+monacoPathEl.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  const p = monacoPathEl.value.trim();
+  if (!p) return;
+  const path = p.startsWith("/") ? p : "/" + p;
+  openInMonaco(path, path.split("/").pop());
+});
+document.getElementById("vMonaco").addEventListener("click", () => {
+  if (vPath) openInMonaco(vPath, vName.textContent || vPath.split("/").pop());
+  closeViewer();
+});
+
+// ---------------- Séparateurs (largeur des colonnes) ----------------
+const mainEl = document.getElementById("main");
+const clampNum = (v, a, b) => Math.max(a, Math.min(b, v));
+function loadW(key, def) {
+  try { const v = Number(localStorage.getItem(key)); return Number.isFinite(v) && v > 0 ? v : def; } catch (_) { return def; }
+}
+function saveW(key, v) { try { localStorage.setItem(key, String(Math.round(v))); } catch (_) {} }
+
+let filesW = loadW("marex.files.w", 300);
+let monacoW = loadW("marex.monaco.w", 520);
+const filesMin = () => 190;
+const filesMax = () => Math.max(260, Math.min(720, mainEl.clientWidth * 0.5));
+const monacoMin = () => 300;
+const monacoMax = () => Math.max(360, Math.min(1200, mainEl.clientWidth * 0.72));
+
+function applyWidths() {
+  filesW = clampNum(filesW, filesMin(), filesMax());
+  monacoW = clampNum(monacoW, monacoMin(), monacoMax());
+  if (isMobile()) {
+    filesPane.style.width = "";
+  } else {
+    filesPane.style.width = filesW + "px";
+  }
+  document.documentElement.style.setProperty("--monaco-w", monacoW + "px");
+  monacoLayout();
+}
+applyWidths();
+window.addEventListener("resize", applyWidths);
+
+function bindSplitter(el, opts) {
+  let dragging = false, startX = 0, startW = 0;
+  el.addEventListener("pointerdown", (e) => {
+    if (e.target.closest("button")) return;
+    dragging = true; startX = e.clientX; startW = opts.get();
+    el.classList.add("drag");
+    try { el.setPointerCapture(e.pointerId); } catch (_) {}
+    e.preventDefault();
+  });
+  el.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const dx = (e.clientX - startX) * (opts.invert ? -1 : 1);
+    opts.set(clampNum(startW + dx, opts.min(), opts.max()));
+    opts.save();
+  });
+  const stop = () => {
+    if (!dragging) return;
+    dragging = false; el.classList.remove("drag"); opts.save();
+  };
+  el.addEventListener("pointerup", stop);
+  el.addEventListener("pointercancel", stop);
+  el.addEventListener("dblclick", () => { opts.set(opts.reset()); opts.save(); });
+  el.querySelectorAll("button[data-d]").forEach((b) => {
+    b.addEventListener("click", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const dir = Number(b.dataset.d) * (opts.invert ? -1 : 1);
+      opts.set(clampNum(opts.get() + dir * 40, opts.min(), opts.max()));
+      opts.save();
+    });
+  });
+}
+
+bindSplitter(rsplitFiles, {
+  get: () => filesW,
+  set: (v) => { filesW = v; applyWidths(); },
+  min: filesMin, max: filesMax, reset: () => 300,
+  save: () => saveW("marex.files.w", filesW)
+});
+bindSplitter(rsplitMonaco, {
+  get: () => monacoW, invert: true,
+  set: (v) => { monacoW = v; applyWidths(); },
+  min: monacoMin, max: monacoMax, reset: () => 520,
+  save: () => saveW("marex.monaco.w", monacoW)
+});
+
+function updateSplitters() {
+  rsplitFiles.classList.toggle("hidden", filesPane.classList.contains("hidden"));
+  rsplitMonaco.classList.toggle("hidden", monacoPane.classList.contains("hidden"));
+}
+
+// conserve l'état replié/déplié de Fichiers
+const _btnFilesHandler = btnFiles.onclick;
+btnFiles.onclick = () => {
+  _btnFilesHandler();
+  SETTINGS.filesOpen = !filesPane.classList.contains("hidden");
+  saveSettings();
+  updateSplitters();
+  applyWidths();
+};
+try {
+  if (!isMobile() && SETTINGS.filesOpen === false) {
+    filesPane.classList.add("hidden");
+    btnFiles.classList.remove("active");
+  }
+  if (!isMobile() && localStorage.getItem("marex.monaco.open") === "1") setMonacoOpen(true);
+} catch (_) {}
+updateSplitters();
+
+
+
+// ================= Viewport mobile (clavier, safe-areas, orientation) =================
+const headerEl = document.querySelector("header");
+const btnMore = document.getElementById("btnMore");
+const vv = window.visualViewport;
+
+function syncAppViewport() {
+  const h = Math.round(vv ? vv.height : window.innerHeight);
+  document.documentElement.style.setProperty("--app-h", h + "px");
+  document.documentElement.style.setProperty("--hdr-h", headerEl.offsetHeight + "px");
+}
+syncAppViewport();
+window.addEventListener("resize", syncAppViewport);
+window.addEventListener("orientationchange", () => setTimeout(syncAppViewport, 120));
+if (vv) {
+  vv.addEventListener("resize", syncAppViewport);
+  vv.addEventListener("scroll", syncAppViewport);
+}
+if (btnMore) {
+  btnMore.addEventListener("click", () => {
+    const open = headerEl.classList.toggle("more-open");
+    btnMore.setAttribute("aria-expanded", open ? "true" : "false");
+    syncAppViewport();
+  });
+  headerEl.addEventListener("click", (e) => {
+    if (!headerEl.classList.contains("more-open")) return;
+    const b = e.target.closest(".hdr-more .btn");
+    if (b) headerEl.classList.remove("more-open");
+    btnMore.setAttribute("aria-expanded", "false");
+    syncAppViewport();
+  });
+}
+
+
+// ================= Thèmes de l'interface =================
+const THEMES = [
+  { id: "marex",     name: "Marexcode",             sw: ["#080b0a", "#a6e3b2", "#74bc89"] },
+  { id: "peps",      name: "Marexcode Peps",        sw: ["#04050a", "#3d7bff", "#ff2d55"] },
+  { id: "modern",    name: "Marexcode Modern",      sw: ["#c9cdd6", "#b06ad9", "#f2c14e"] },
+  { id: "next",      name: "Marexcode Next Level",  sw: ["#ffe600", "#060608", "#8b5cf6"] },
+  { id: "futuriste", name: "Marexcode Futuriste",   sw: ["#c08552", "#d8d6e0", "#b9a7ff"] },
+  { id: "green",     name: "Marexcode Green",        sw: ["#050806", "#10b981", "#a3ff12"] },
+];
+const THEME_IDS = new Set(THEMES.map((t) => t.id));
+const themeList = document.getElementById("themeList");
+const btnSettings = document.getElementById("btnSettings");
+const settingsEl = document.getElementById("settings");
+const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+
+function currentTheme() {
+  const t = document.documentElement.getAttribute("data-theme");
+  return t && THEME_IDS.has(t) ? t : "marex";
+}
+
+function cssVar(name, fallback) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name);
+  return (v || "").trim() || fallback;
+}
+
+function hexOr(value, fallback) {
+  const v = String(value || "").trim();
+  return /^#[0-9a-fA-F]{6}$/.test(v) ? v : fallback;
+}
+
+function withAlpha(hex, a) {
+  const h = hexOr(hex, "#000000").slice(1);
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  return "rgba(" + r + ", " + g + ", " + b + ", " + a + ")";
+}
+
+function applyMonacoTheme(api) {
+  if (!api) return;
+  const id = currentTheme();
+  const bg = hexOr(cssVar("--surface3", "#090c0a"), "#090c0a");
+  const fg = hexOr(cssVar("--fg", "#dbe6de"), "#dbe6de");
+  const muted = hexOr(cssVar("--muted", "#6b7f71"), "#6b7f71");
+  const accent = hexOr(cssVar("--accent", "#a6e3b2"), "#a6e3b2");
+  const accent2 = hexOr(cssVar("--accent2", "#74bc89"), "#74bc89");
+  const line = hexOr(cssVar("--surface2", "#101713"), "#101713");
+  const border = line;
+  api.editor.defineTheme("marex-" + id, {
+    base: "vs-dark",
+    inherit: true,
+    rules: [
+      { token: "comment", foreground: muted.replace("#", ""), fontStyle: "italic" },
+      { token: "keyword", foreground: accent.replace("#", "") },
+      { token: "string", foreground: accent2.replace("#", "") },
+      { token: "number", foreground: accent2.replace("#", "") },
+      { token: "type", foreground: accent.replace("#", "") },
+      { token: "delimiter", foreground: muted.replace("#", "") }
+    ],
+    colors: {
+      "editor.background": bg,
+      "editor.foreground": fg,
+      "editorLineNumber.foreground": withAlpha(muted, 0.55),
+      "editorLineNumber.activeForeground": accent,
+      "editor.lineHighlightBackground": line,
+      "editor.selectionBackground": withAlpha(accent, 0.24),
+      "editor.inactiveSelectionBackground": withAlpha(accent, 0.12),
+      "editorCursor.foreground": accent,
+      "editorIndentGuide.background1": withAlpha(border, 0.35),
+      "editorWidget.background": bg,
+      "editorWidget.border": border,
+      "scrollbarSlider.background": withAlpha(accent, 0.14),
+      "scrollbarSlider.hoverBackground": withAlpha(accent, 0.28),
+      "minimap.background": bg
+    }
+  });
+  api.editor.setTheme("marex-" + id);
+}
+
+
+function syncSshTheme() {
+  let doc = null;
+  try { doc = sshFrame.contentDocument; } catch (_) { return; }
+  if (!doc || !doc.head) return;
+  let st = doc.getElementById("marex-ssh-theme");
+  if (!st) {
+    st = doc.createElement("style");
+    st.id = "marex-ssh-theme";
+    doc.head.appendChild(st);
+  }
+  const bg = cssVar("--bg", "#080b0a");
+  const bg2 = cssVar("--bg2", "rgba(76,125,88,.15)");
+  const surface = cssVar("--surface", "#0c100e");
+  const surface2 = cssVar("--surface2", "#141b17");
+  const surface3 = cssVar("--surface3", "#090c0a");
+  const fg = cssVar("--fg", "#e7eee9");
+  const fg2 = cssVar("--fg2", "#c3d0c6");
+  const muted = cssVar("--muted", "#87958c");
+  const border = cssVar("--border", "rgba(186,211,195,.12)");
+  const border2 = cssVar("--border2", "rgba(186,211,195,.2)");
+  const accent = hexOr(cssVar("--accent", "#a6e3b2"), "#a6e3b2");
+  const accent2 = hexOr(cssVar("--accent2", "#74bc89"), "#74bc89");
+  const onAccent = hexOr(cssVar("--on-accent", "#08120b"), "#08120b");
+  const danger = hexOr(cssVar("--danger", "#ff8a82"), "#ff8a82");
+  const warn = hexOr(cssVar("--warn", "#edc778"), "#edc778");
+  const a = (p) => withAlpha(accent, p);
+  const a2 = (p) => withAlpha(accent2, p);
+  st.textContent = [
+    ":root { color-scheme: dark; }",
+    "html, body { background: radial-gradient(ellipse at 50% -25%, " + bg2 + ", transparent 58%), " + bg + " !important; color: " + fg + " !important; }",
+    "h1 { color: " + muted + " !important; }",
+    "h1:before { background: " + accent + " !important; box-shadow: 0 0 13px " + a(0.7) + " !important; }",
+    "form { background: linear-gradient(150deg, " + surface2 + ", " + surface + ") !important; border-color: " + border + " !important; }",
+    "label { color: " + muted + " !important; }",
+    "input, select, textarea { background: " + surface3 + " !important; border-color: " + border + " !important; color: " + fg + " !important; }",
+    "input:hover, select:hover, textarea:hover { border-color: " + border2 + " !important; }",
+    "input:focus, select:focus, textarea:focus { border-color: " + accent + " !important; box-shadow: 0 0 0 3px " + a(0.1) + " !important; background: " + surface3 + " !important; }",
+    ".btn { background: " + a(0.02) + " !important; border-color: " + border + " !important; color: " + fg2 + " !important; }",
+    ".btn:hover { border-color: " + a(0.48) + " !important; background: " + a(0.07) + " !important; color: " + fg + " !important; }",
+    ".primary { background: linear-gradient(135deg, " + accent + ", " + accent2 + ") !important; color: " + onAccent + " !important; }",
+    ".primary:hover { background: linear-gradient(135deg, " + accent + ", " + accent2 + ") !important; filter: brightness(1.06); color: " + onAccent + " !important; }",
+    ".note { color: " + muted + " !important; }",
+    "#status { color: " + muted + " !important; }",
+    ".err { color: " + danger + " !important; }",
+    ".warn { color: " + warn + " !important; }",
+    ".ok { color: " + accent + " !important; }",
+    "#tabs { border-bottom-color: " + border + " !important; }",
+    ".tab { background: " + a(0.02) + " !important; border-color: " + border + " !important; color: " + muted + " !important; }",
+    ".tab.active { background: " + a(0.14) + " !important; border-color: " + a(0.38) + " !important; color: " + fg + " !important; }",
+    "#term { background: " + surface3 + " !important; border-color: " + border + " !important; }",
+    "#term .xterm-viewport { background: " + surface3 + " !important; }",
+    "#sfPath { background: " + surface3 + " !important; color: " + fg + " !important; }",
+    ".sf-list { background: " + surface + " !important; border-color: " + border + " !important; }",
+    ".sf-row { border-bottom-color: " + border + " !important; }",
+    ".sf-row:hover { background: " + a(0.06) + " !important; }",
+    ".sf-name.dir { color: " + accent + " !important; }",
+    ".sf-size, .sf-date { color: " + muted + " !important; }",
+    ".sf-actions button:hover { background: " + a(0.1) + " !important; color: " + fg + " !important; }",
+    ".sf-preview { background: " + surface3 + " !important; border-color: " + border + " !important; }",
+    ".sf-preview-head { background: " + surface2 + " !important; border-bottom-color: " + border + " !important; }",
+    ".sf-preview-head span { color: " + fg + " !important; }",
+    "#sfPreviewText { color: " + fg2 + " !important; }",
+    ".drop { border-color: " + accent + " !important; background: " + a(0.05) + " !important; }",
+    ".connect-layer { background: " + withAlphaCss(bg, 0.82) + " !important; }",
+    ".connect-dialog { background: linear-gradient(155deg, " + surface2 + ", " + surface + ") !important; border-color: " + border2 + " !important; }",
+    ".connect-head { border-bottom-color: " + border + " !important; }",
+    ".connect-icon { color: " + accent + " !important; background: " + a(0.1) + " !important; border-color: " + a(0.22) + " !important; }",
+    ".connect-eyebrow { color: " + accent + " !important; }",
+    ".connect-head h1 { color: " + fg + " !important; }",
+    ".connect-subtitle { color: " + muted + " !important; }",
+    "body.embedded { background: " + surface3 + " !important; }",
+    "body.embedded .connect-layer { background: transparent !important; }",
+    "html, body { transition: background-color .3s ease, color .3s ease; }",
+    "input, select, textarea, .btn, .tab, .sf-row, .action, .sf-actions button { transition: background .16s ease, border-color .16s ease, color .16s ease, transform .16s ease, box-shadow .2s ease; }",
+    ".btn:hover, .action:hover, .sf-actions button:hover { transform: translateY(-1px); }",
+    ".connect-dialog { animation: sshIn .34s cubic-bezier(.16,1,.3,1) both; }",
+    "@keyframes sshIn { from { opacity: 0; transform: translateY(14px) scale(.97); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }",
+    "#tabs .tab { position: relative; overflow: hidden; }",
+    "#tabs .tab::after { content: \"\"; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; border-radius: 2px; background: " + accent + " !important; transform: scaleX(0); transition: transform .26s cubic-bezier(.16,1,.3,1); }",
+    "#tabs .tab.active::after { transform: scaleX(1); }",
+    ".sf-row { animation: sshRow .26s ease both; }",
+    "@keyframes sshRow { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }",
+    "@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }"
+  ].join("\n");
+}
+
+function withAlphaCss(color, alpha) {
+  const v = String(color || "").trim();
+  let m = v.match(/^#([0-9a-fA-F]{6})$/);
+  if (m) {
+    const h = m[1];
+    return "rgba(" + parseInt(h.slice(0,2),16) + ", " + parseInt(h.slice(2,4),16) + ", " + parseInt(h.slice(4,6),16) + ", " + alpha + ")";
+  }
+  m = v.match(/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/);
+  if (m) return "rgba(" + m[1] + ", " + m[2] + ", " + m[3] + ", " + alpha + ")";
+  return v;
+}
+
+function syncFileBrowserTheme() {
+  let doc = null;
+  try { doc = filesFrame.contentDocument; } catch (_) { return; }
+  if (!doc || !doc.head) return;
+  let st = doc.getElementById("marex-fb-theme");
+  if (!st) {
+    st = doc.createElement("style");
+    st.id = "marex-fb-theme";
+    doc.head.appendChild(st);
+  }
+  const bg = cssVar("--bg", "#080b0a");
+  const surface = cssVar("--surface", "#0c100e");
+  const surface2 = cssVar("--surface2", "#141b17");
+  const fg = cssVar("--fg", "#e7eee9");
+  const fg2 = cssVar("--fg2", "#c3d0c6");
+  const muted = cssVar("--muted", "#87958c");
+  const border = cssVar("--border", "rgba(186,211,195,.12)");
+  const border2 = cssVar("--border2", "rgba(186,211,195,.2)");
+  const accent = hexOr(cssVar("--accent", "#a6e3b2"), "#a6e3b2");
+  const accent2 = hexOr(cssVar("--accent2", "#74bc89"), "#74bc89");
+  const onAccent = hexOr(cssVar("--on-accent", "#08120b"), "#08120b");
+  const danger = hexOr(cssVar("--danger", "#ff8a82"), "#ff8a82");
+  st.textContent = [
+    ":root, :root.dark, :root.light {",
+    "  --background: " + bg + " !important;",
+    "  --surfacePrimary: " + surface + " !important;",
+    "  --surfaceSecondary: " + surface2 + " !important;",
+    "  --textPrimary: " + fg + " !important;",
+    "  --textSecondary: " + muted + " !important;",
+    "  --text: " + fg + " !important;",
+    "  --action: " + fg2 + " !important;",
+    "  --blue: " + accent + " !important;",
+    "  --dark-blue: " + accent2 + " !important;",
+    "  --iconPrimary: " + fg + " !important;",
+    "  --iconSecondary: " + fg2 + " !important;",
+    "  --iconTertiary: " + surface2 + " !important;",
+    "  --icon-blue: " + accent + " !important;",
+    "  --icon-green: " + accent + " !important;",
+    "  --icon-violet: " + accent2 + " !important;",
+    "  --borderPrimary: " + border + " !important;",
+    "  --borderSecondary: " + border2 + " !important;",
+    "  --divider: " + border + " !important;",
+    "  --dividerPrimary: " + border + " !important;",
+    "  --dividerSecondary: " + border2 + " !important;",
+    "  --hover: " + withAlpha(accent, 0.09) + " !important;",
+    "  --red: " + danger + " !important;",
+    "  --dark-red: " + danger + " !important;",
+    "}",
+    "html, body, #app { background: " + bg + " !important; color: " + fg + " !important; }",
+    "header { background: " + surface2 + " !important; color: " + fg + " !important; }",
+    "#nav, .dashboard { background: " + bg + " !important; }",
+    ".breadcrumbs { background: " + surface2 + " !important; }",
+    "#listing .item { background: " + surface + " !important; color: " + fg + " !important; }",
+    "#listing .item:hover { background: " + withAlpha(accent, 0.08) + " !important; }",
+    "#listing .item[aria-selected=true] { background: " + accent + " !important; color: " + onAccent + " !important; }",
+    "#listing.list .item.header { background: " + bg + " !important; }",
+    "a, .link { color: " + accent + " !important; }",
+    "#listing .item { transition: background .16s ease, transform .16s ease, border-color .16s ease; }",
+    "@keyframes mfIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }",
+    "#listing .item { animation: mfIn .3s cubic-bezier(.22,1,.36,1) both; }",
+    "#listing .item:hover { transform: translateX(1px); }",
+    "header, .dashboard, nav { backdrop-filter: blur(12px); }",
+    ".action { transition: background .16s ease, color .16s ease, transform .16s ease; border-radius: 8px; }",
+    ".action:hover { transform: translateY(-1px); }",
+    "@media (prefers-reduced-motion: reduce) { #listing .item { animation: none; } }"
+  ].join("\n");
+}
+
+function renderThemeList() {
+  const cur = currentTheme();
+  themeList.innerHTML = "";
+  THEMES.forEach((t) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "tm-item" + (t.id === cur ? " active" : "");
+    b.dataset.theme = t.id;
+    b.setAttribute("role", "menuitemradio");
+    b.setAttribute("aria-checked", t.id === cur ? "true" : "false");
+    b.innerHTML =
+      '<span class="tm-sw">' + t.sw.map((c) => '<i style="background:' + c + '"></i>').join("") + "</span>" +
+      '<span class="tm-name"></span>' +
+      '<span class="tm-check">&#10003;</span>';
+    b.querySelector(".tm-name").textContent = t.name;
+    b.addEventListener("click", () => {
+      applyTheme(t.id);
+    });
+    themeList.appendChild(b);
+  });
+}
+
+function applyTheme(id) {
+  if (!THEME_IDS.has(id)) id = "marex";
+  document.documentElement.setAttribute("data-theme", id);
+  try { localStorage.setItem("marex.theme", id); } catch (_) {}
+  const bg = cssVar("--bg", "#080b0a");
+  if (themeColorMeta) themeColorMeta.setAttribute("content", bg);
+  try { localStorage.setItem("marex.theme.color", bg); } catch (_) {}
+  renderThemeList();
+  syncFileBrowserTheme();
+  syncSshTheme();
+  if (monacoApi) applyMonacoTheme(monacoApi);
+  if (document.readyState === "complete") {
+    var t = THEMES.find(function (x) { return x.id === id; });
+    if (t) marexToast("Thème · " + t.name);
+    document.documentElement.classList.add("theming");
+    clearTimeout(applyTheme._tt);
+    applyTheme._tt = setTimeout(function () {
+      document.documentElement.classList.remove("theming");
+    }, 480);
+  }
+}
+
+// ================= Panneau Réglages =================
+const settingsMeta = document.getElementById("settingsMeta");
+const setNav = document.getElementById("setnav");
+const setPanes = [...document.querySelectorAll("#settings .setpane")];
+const setTabs = [...document.querySelectorAll("#settings .settab")];
+const setMonacoFont = document.getElementById("setMonacoFont");
+const setMonacoFontVal = document.getElementById("setMonacoFontVal");
+const setMonacoMinimap = document.getElementById("setMonacoMinimap");
+const setMonacoWrap = document.getElementById("setMonacoWrap");
+const setMonacoTab = document.getElementById("setMonacoTab");
+const setTerminalTab = document.getElementById("setTerminalTab");
+const setMonInterval = document.getElementById("setMonInterval");
+const setMonSegs = document.getElementById("setMonSegs");
+const setFilesOpen = document.getElementById("setFilesOpen");
+const setResetCols = document.getElementById("setResetCols");
+const settingsClose = document.getElementById("settingsClose");
+const settingsResetAll = document.getElementById("settingsResetAll");
+const setAbout = document.getElementById("setAbout");
+let activeSection = "appearance";
+
+function syncSettingsUI() {
+  if (!setMonacoFont) return;
+  setMonacoFont.value = String(SETTINGS.monacoFont);
+  setMonacoFontVal.textContent = Number(SETTINGS.monacoFont).toFixed(1) + " px";
+  setMonacoMinimap.checked = Boolean(SETTINGS.monacoMinimap);
+  setMonacoWrap.checked = Boolean(SETTINGS.monacoWrap);
+  setMonacoTab.value = String(SETTINGS.monacoTab || 2);
+  setTerminalTab.value = String(defaultTerminalIndex());
+  setMonInterval.value = String(SETTINGS.monInterval || 3000);
+  setFilesOpen.checked = SETTINGS.filesOpen !== false;
+  setMonSegs.querySelectorAll("input[data-seg]").forEach((cb) => {
+    cb.checked = Boolean(SETTINGS.monSegs[cb.dataset.seg]);
+  });
+  if (settingsMeta) settingsMeta.textContent = "préférences locales";
+}
+
+function setSection(sec) {
+  activeSection = sec;
+  setTabs.forEach((t) => t.classList.toggle("active", t.dataset.sec === sec));
+  setPanes.forEach((p) => p.classList.toggle("active", p.dataset.sec === sec));
+  if (sec === "about") loadAbout();
+}
+
+async function loadAbout() {
+  if (!setAbout) return;
+  setAbout.textContent = "…";
+  let st = null, devCount = null, storage = null;
+  try {
+    const r = await fetch("/gate/status", { credentials: "same-origin", cache: "no-store" });
+    if (r.ok) st = await r.json();
+  } catch (_) {}
+  try {
+    const r = await fetch("/gate/devices", { credentials: "same-origin", cache: "no-store" });
+    if (r.ok) { const j = await r.json(); devCount = (j.devices || []).length; }
+  } catch (_) {}
+  try {
+    const e = await navigator.storage.estimate();
+    const mo = (e.usage || 0) / 1048576;
+    storage = mo >= 1 ? mo.toFixed(1) + " Mo" : Math.round((e.usage || 0) / 1024) + " Ko";
+  } catch (_) {}
+
+  const rows = [
+    ["Adresse", location.origin + location.pathname],
+    ["Thème", (THEMES.find((t) => t.id === currentTheme()) || {}).name || currentTheme()],
+    ["Portail maître", st ? (st.configured ? "configuré" : "non configuré") : "injoignable"],
+    ["TOTP", st ? (st.totp_enabled ? "activé" : "désactivé") : "—"],
+    ["Passkeys", st ? String(st.passkeys ?? 0) : "—"],
+    ["Appareils actifs", devCount != null ? String(devCount) : "—"],
+    ["Confiance", st ? st.trust_days + " j (max " + st.max_trust_days + " j)" : "—"],
+    ["Version page", "2026-10-31 · Marexcode Web"],
+    ["Monaco", "monaco-editor 0.57 (vendorisé)"],
+    ["Stockage local", storage || "—"],
+    ["Navigateur", navigator.userAgent]
+  ];
+  setAbout.innerHTML = "";
+  rows.forEach(([k, v]) => {
+    const row = document.createElement("div");
+    row.className = "setrow2";
+    const a = document.createElement("span"); a.textContent = k;
+    const b = document.createElement("span"); b.textContent = v;
+    row.append(a, b);
+    setAbout.appendChild(row);
+  });
+}
+
+function openSettings() {
+  try { closeDevices(); } catch (_) {}
+  try { if (sshEl.classList.contains("open")) closeSsh(); } catch (_) {}
+  try { if (viewer.classList.contains("open")) closeViewer(); } catch (_) {}
+  syncSettingsUI();
+  renderThemeList();
+  marexShowModal(settingsEl);
+  settingsEl.setAttribute("aria-hidden", "false");
+  btnSettings.classList.add("active");
+  setSection(activeSection);
+  syncAppViewport();
+}
+function closeSettings() {
+  marexFadeClose(settingsEl);
+  settingsEl.setAttribute("aria-hidden", "true");
+  btnSettings.classList.remove("active");
+}
+
+btnSettings.addEventListener("click", (e) => {
+  e.stopPropagation();
+  if (settingsEl.classList.contains("open")) closeSettings(); else openSettings();
+});
+settingsClose.addEventListener("click", closeSettings);
+settingsEl.addEventListener("click", (e) => { if (e.target === settingsEl) closeSettings(); });
+setNav.addEventListener("click", (e) => {
+  const b = e.target.closest(".settab");
+  if (b) setSection(b.dataset.sec);
+});
+
+setMonacoFont.addEventListener("input", () => {
+  SETTINGS.monacoFont = Number(setMonacoFont.value);
+  setMonacoFontVal.textContent = SETTINGS.monacoFont.toFixed(1) + " px";
+  saveSettings();
+  applyMonacoOptions();
+});
+setMonacoMinimap.addEventListener("change", () => {
+  SETTINGS.monacoMinimap = setMonacoMinimap.checked; saveSettings(); applyMonacoOptions();
+});
+setMonacoWrap.addEventListener("change", () => {
+  SETTINGS.monacoWrap = setMonacoWrap.checked; saveSettings(); applyMonacoOptions();
+});
+setMonacoTab.addEventListener("change", () => {
+  SETTINGS.monacoTab = Number(setMonacoTab.value) || 2; saveSettings(); applyMonacoOptions();
+});
+setTerminalTab.addEventListener("change", () => {
+  SETTINGS.terminalTab = Number(setTerminalTab.value) || 0; saveSettings();
+});
+setMonInterval.addEventListener("change", () => {
+  SETTINGS.monInterval = Number(setMonInterval.value) || 3000;
+  saveSettings();
+  startMetrics();
+});
+setMonSegs.addEventListener("change", (e) => {
+  const cb = e.target.closest("input[data-seg]");
+  if (!cb) return;
+  SETTINGS.monSegs[cb.dataset.seg] = cb.checked;
+  saveSettings();
+  refreshMetrics();
+});
+setFilesOpen.addEventListener("change", () => {
+  SETTINGS.filesOpen = setFilesOpen.checked;
+  saveSettings();
+});
+setResetCols.addEventListener("click", () => {
+  filesW = 300; monacoW = 520; saveW("marex.files.w", filesW); saveW("marex.monaco.w", monacoW);
+  applyWidths();
+});
+document.getElementById("setDevices").addEventListener("click", () => {
+  closeSettings(); btnDevices.click();
+});
+document.getElementById("setPasskeys").addEventListener("click", () => {
+  closeSettings(); btnDevices.click();
+});
+document.getElementById("setLock").addEventListener("click", () => {
+  closeSettings(); btnLock.click();
+});
+settingsResetAll.addEventListener("click", () => {
+  if (!confirm("Réinitialiser tous les réglages locaux ?")) return;
+  SETTINGS = cloneDefaults();
+  saveSettings();
+  try {
+    localStorage.removeItem("marex.files.w");
+    localStorage.removeItem("marex.monaco.w");
+    localStorage.removeItem("marex.monaco.open");
+    localStorage.removeItem("marex.files.open");
+  } catch (_) {}
+  applyTheme("marex");
+  syncSettingsUI();
+  applyMonacoOptions();
+  filesW = 300; monacoW = 520; applyWidths();
+  startMetrics();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && settingsEl.classList.contains("open")) closeSettings();
+});
+
+/* =====================  couche premium : JS  ===================== */
+function marexReduced() {
+  try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+  catch (_) { return false; }
+}
+function marexShowModal(el) {
+  if (!el) return;
+  el.__closing = false;
+  el.classList.remove("closing");
+  el.classList.add("open");
+}
+function marexFadeClose(el) {
+  if (!el) return;
+  if (!el.classList.contains("open")) { el.classList.remove("closing"); return; }
+  if (marexReduced()) { el.__closing = false; el.classList.remove("open", "closing"); return; }
+  el.__closing = true;
+  el.classList.add("closing");
+  setTimeout(function () {
+    if (!el.__closing) return;
+    el.__closing = false;
+    el.classList.remove("open", "closing");
+  }, 180);
+}
+function marexShake(el) {
+  if (!el || marexReduced()) return;
+  el.classList.remove("shake");
+  void el.offsetWidth;
+  el.classList.add("shake");
+  setTimeout(function () { el.classList.remove("shake"); }, 540);
+}
+var marexToastEl = null, marexToastTimer = 0;
+function marexToast(msg) {
+  if (!msg) return;
+  if (!marexToastEl) {
+    marexToastEl = document.createElement("div");
+    marexToastEl.id = "toast";
+    marexToastEl.setAttribute("role", "status");
+    marexToastEl.setAttribute("aria-live", "polite");
+    document.body.appendChild(marexToastEl);
+  }
+  marexToastEl.textContent = msg;
+  marexToastEl.classList.add("show");
+  clearTimeout(marexToastTimer);
+  marexToastTimer = setTimeout(function () { marexToastEl.classList.remove("show"); }, 2200);
+}
+document.addEventListener("pointerdown", function (e) {
+  var b = e.target.closest ? e.target.closest(".btn,.tab,.tm-item,.settab") : null;
+  if (!b || marexReduced()) return;
+  var r = b.getBoundingClientRect();
+  var s = Math.max(r.width, r.height);
+  var sp = document.createElement("span");
+  sp.className = "ripple";
+  sp.style.width = sp.style.height = s + "px";
+  sp.style.left = (e.clientX - r.left - s / 2) + "px";
+  sp.style.top = (e.clientY - r.top - s / 2) + "px";
+  b.appendChild(sp);
+  setTimeout(function () { sp.remove(); }, 620);
+});
+
+/* ===================== barre de touches mobile ===================== */
+(function () {
+  const bar = document.getElementById("mkeys");
+  const ck = document.getElementById("codekb");
+  if (!bar || !ck) return;
+  const ckBody = document.getElementById("ckBody");
+  const mkHide = document.getElementById("mkHide");
+  const mkCode = document.getElementById("mkCode");
+  const mkInput = document.getElementById("mkInput");
+  const ckMain = document.getElementById("ckMain");
+
+  const mods = { ctrl: false, alt: false, shift: false };
+  const modLock = { ctrl: false, alt: false, shift: false };
+  const modTapAt = { ctrl: 0, alt: 0, shift: 0 };
+  const MOD_DBL_MS = 500;
+  let modHoldTimer = 0;
+  const isMobileUI = () =>
+    window.matchMedia("(max-width: 820px)").matches ||
+    window.matchMedia("(pointer: coarse)").matches;
+
+  const KEY = {
+    Escape: [27, "Escape"], Tab: [9, "Tab"], Enter: [13, "Enter"],
+    Backspace: [8, "Backspace"], Delete: [46, "Delete"], Insert: [45, "Insert"],
+    Home: [36, "Home"], End: [35, "End"], PageUp: [33, "PageUp"], PageDown: [34, "PageDown"],
+    ArrowUp: [38, "ArrowUp"], ArrowDown: [40, "ArrowDown"],
+    ArrowLeft: [37, "ArrowLeft"], ArrowRight: [39, "ArrowRight"]
+  };
+  for (let i = 1; i <= 12; i++) KEY["F" + i] = [111 + i, "F" + i];
+
+  function termFrame() {
+    const list = Array.prototype.slice.call(document.querySelectorAll("#termwrap iframe"));
+    return list.filter((f) => f.classList.contains("active"))[0] || list[0] || null;
+  }
+  function termDoc() {
+    const f = termFrame();
+    if (!f) return null;
+    try { return f.contentDocument || null; } catch (_) { return null; }
+  }
+  function termTa() {
+    const d = termDoc();
+    if (!d) return null;
+    return d.querySelector(".xterm-helper-textarea") ||
+      d.querySelector(".xterm textarea") ||
+      d.querySelector("textarea");
+  }
+
+  function syncKeyboardInset() {
+    let kb = 0;
+    try {
+      const vv = window.visualViewport;
+      if (vv) kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+    } catch (_) {}
+    document.documentElement.style.setProperty("--kb", kb + "px");
+  }
+  window.addEventListener("resize", () => { syncKeyboardInset(); syncCodeKbHeight(); });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", () => { syncKeyboardInset(); syncCodeKbHeight(); });
+    window.visualViewport.addEventListener("scroll", syncKeyboardInset);
+  }
+
+  function showBar() {
+    if (!isMobileUI() || !termTa()) return;
+    if (ck.classList.contains("show")) return;
+    const modal = ["viewer", "devices", "ssh", "settings"].some(function (id) {
+      const el = document.getElementById(id);
+      return el && el.classList.contains("open");
+    });
+    if (modal) return;
+    syncKeyboardInset();
+    bar.classList.add("show");
+    document.body.classList.add("mkeys-on");
+    showScrollFab(true);
+  }
+  function hideBar() {
+    bar.classList.remove("show");
+    ck.classList.remove("show");
+    ck.setAttribute("aria-hidden", "true");
+    mkCode.setAttribute("aria-expanded", "false");
+    exitScroll();
+    showScrollFab(false);
+    document.body.classList.remove("mkeys-on", "ck-on");
+    document.documentElement.style.removeProperty("--ck-h");
+    try {
+      const ta = termTa();
+      if (ta) { ta.removeAttribute("inputmode"); ta.removeAttribute("enterkeyhint"); }
+    } catch (_) {}
+    clearMods();
+  }
+
+  function setMod(name, state) {
+    if (!(name in mods)) return;
+    const st = state === true ? 1 : state === false ? 0 : (Number(state) || 0);
+    mods[name] = st > 0;
+    modLock[name] = st === 2;
+    document.querySelectorAll('[data-mod="' + name + '"]').forEach((b) => {
+      b.classList.toggle("on", st > 0);
+      b.classList.toggle("lock", st === 2);
+      b.setAttribute("aria-pressed", st > 0 ? "true" : "false");
+      b.setAttribute("aria-checked", st === 2 ? "true" : "false");
+    });
+  }
+
+  /* 1 appui = one-shot ; 2e appui rapide = verrouillé ; appui sur verrouillé = off */
+  function tapMod(name) {
+    if (!(name in mods)) return;
+    const now = Date.now();
+    if (modLock[name]) { setMod(name, 0); modTapAt[name] = 0; return; }
+    if (!mods[name]) { setMod(name, 1); modTapAt[name] = now; return; }
+    if (now - modTapAt[name] < MOD_DBL_MS) { setMod(name, 2); return; }
+    setMod(name, 0);
+    modTapAt[name] = 0;
+  }
+
+  function consumeMods() {
+    ["ctrl", "alt", "shift"].forEach((n) => {
+      if (mods[n] && !modLock[n]) setMod(n, 0);
+    });
+  }
+
+  function anyMod() { return mods.ctrl || mods.alt || mods.shift; }
+
+  function clearMods() {
+    setMod("ctrl", false);
+    setMod("alt", false);
+    setMod("shift", false);
+  }
+
+  function focusInput() {
+    if (!mkInput) return;
+    try { mkInput.value = ""; mkInput.focus({ preventScroll: true }); }
+    catch (_) { try { mkInput.focus(); } catch (__) {} }
+  }
+  function blurInput() {
+    if (!mkInput) return;
+    try { mkInput.value = ""; mkInput.blur(); } catch (_) {}
+  }
+
+  function termObj() {
+    const f = termFrame();
+    if (!f) return null;
+    try { return (f.contentWindow && f.contentWindow.term) || null; } catch (_) { return null; }
+  }
+
+  function csi(m, final, base) {
+    const n = 1 + ((m.shift ? 1 : 0) + (m.alt ? 2 : 0) + (m.ctrl ? 4 : 0));
+    if (n === 1) return "\x1b[" + (base || "") + final;
+    return "\x1b[" + (base ? base + ";" : "") + n + final;
+  }
+
+  function keySequence(name, m) {
+    switch (name) {
+      case "Escape": return "\x1b";
+      case "Tab": return m.shift ? "\x1b[Z" : "\t";
+      case "Enter": return (m.alt ? "\x1b" : "") + "\r";
+      case "Backspace": return (m.alt ? "\x1b" : "") + "\x7f";
+      case "Insert": return csi(m, "~", "2");
+      case "Delete": return csi(m, "~", "3");
+      case "Home": return (m.shift || m.alt || m.ctrl) ? csi(m, "H", "1") : "\x1b[H";
+      case "End": return (m.shift || m.alt || m.ctrl) ? csi(m, "F", "1") : "\x1b[F";
+      case "PageUp": return csi(m, "~", "5");
+      case "PageDown": return csi(m, "~", "6");
+      case "ArrowUp": return (m.shift || m.alt || m.ctrl) ? csi(m, "A", "1") : "\x1b[A";
+      case "ArrowDown": return (m.shift || m.alt || m.ctrl) ? csi(m, "B", "1") : "\x1b[B";
+      case "ArrowRight": return (m.shift || m.alt || m.ctrl) ? csi(m, "C", "1") : "\x1b[C";
+      case "ArrowLeft": return (m.shift || m.alt || m.ctrl) ? csi(m, "D", "1") : "\x1b[D";
+    }
+    const fn = /^F(\d+)$/.exec(name);
+    if (fn) {
+      const k = Number(fn[1]);
+      if (k <= 4) return (m.shift || m.alt || m.ctrl)
+        ? csi(m, "PQRS".charAt(k - 1), "1")
+        : "\x1bO" + "PQRS".charAt(k - 1);
+      const codes = { 5: 15, 6: 17, 7: 18, 8: 19, 9: 20, 10: 21, 11: 23, 12: 24 };
+      return csi(m, "~", String(codes[k]));
+    }
+    return "";
+  }
+
+  function sendKey(name, extra) {
+    if (scrollActive) exitScroll();
+    const m = Object.assign({}, mods, extra || {});
+    const seq = keySequence(name, m);
+    if (!seq) return;
+    const t = termObj();
+    if (t) { try { t.input(seq); return; } catch (_) {} }
+    /* repli (si window.term indisponible) : événements clavier */
+    const d = termDoc();
+    const ta = termTa();
+    if (!d || !ta) return;
+    const info = KEY[name] || [0, name];
+    try { ta.focus({ preventScroll: true }); } catch (_) {}
+    const init = {
+      key: info[1], code: info[1], keyCode: info[0], which: info[0],
+      ctrlKey: !!m.ctrl, altKey: !!m.alt, shiftKey: !!m.shift, metaKey: false,
+      bubbles: true, cancelable: true, composed: true
+    };
+    try {
+      const W = d.defaultView || window;
+      ta.dispatchEvent(new W.KeyboardEvent("keydown", init));
+      ta.dispatchEvent(new W.KeyboardEvent("keyup", init));
+    } catch (_) {}
+  }
+
+  function sendChar(ch, extra) {
+    if (scrollActive) exitScroll();
+    const m = Object.assign({}, mods, extra || {});
+    let text;
+    if (m.ctrl) {
+      text = String.fromCharCode(ch.toUpperCase().charCodeAt(0) & 0x1f);
+    } else {
+      text = (m.shift && /^[a-z]$/.test(ch)) ? ch.toUpperCase() : ch;
+    }
+    if (m.alt) text = "\x1b" + text;
+    const t = termObj();
+    if (t) { try { t.input(text); return; } catch (_) {} }
+    /* repli */
+    const d = termDoc();
+    const ta = termTa();
+    if (!d || !ta) return;
+    try { ta.focus({ preventScroll: true }); } catch (_) {}
+    const W = d.defaultView || window;
+    let ok = false;
+    try { ok = d.execCommand && d.execCommand("insertText", false, text); } catch (_) { ok = false; }
+    if (ok) { try { ta.value = ""; } catch (_) {} }
+    if (!ok) {
+      try {
+        ta.value = text;
+        ta.dispatchEvent(new W.InputEvent("input", {
+          bubbles: true, cancelable: true, inputType: "insertText", data: text
+        }));
+      } catch (_) {
+        try { ta.value = text; ta.dispatchEvent(new W.Event("input", { bubbles: true })); } catch (__) {}
+      }
+      ta.value = "";
+    }
+  }
+
+  /* Défilement : tmux copy-mode (préfixe Ctrl+B [), fonctionne même quand
+     l'application plein écran capture la souris (Marexcode, vim…). */
+  let scrollActive = false;
+  let scrollAlt = true;
+  const scrollFab = document.getElementById("scrollFab");
+
+  function showScrollFab(on) {
+    if (scrollFab) scrollFab.classList.toggle("show", !!on);
+  }
+  function enterScroll() {
+    if (scrollActive) return;
+    const t = termObj();
+    if (!t) return;
+    try { scrollAlt = t.buffer.active.type === "alternate"; } catch (_) { scrollAlt = true; }
+    if (scrollAlt) { try { t.input("\x02["); } catch (_) {} }
+    scrollActive = true;
+  }
+  function exitScroll() {
+    if (!scrollActive) return;
+    const t = termObj();
+    if (t && scrollAlt) { try { t.input("q"); } catch (_) {} }
+    scrollActive = false;
+  }
+  function scrollStep(n) {
+    const t = termObj();
+    if (!t) return;
+    if (!scrollAlt) { try { t.scrollLines(n * 2); } catch (_) {} return; }
+    const seq = n < 0 ? "\x1b[A" : "\x1b[B";
+    const count = Math.min(12, Math.abs(n));
+    for (let i = 0; i < count; i++) { try { t.input(seq); } catch (_) {} }
+  }
+  (function wireFab() {
+    const up = document.getElementById("sfUp");
+    const dn = document.getElementById("sfDown");
+    const lv = document.getElementById("sfLive");
+    [up, dn, lv].forEach(function (b) {
+      if (!b) return;
+      b.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); }, { passive: false });
+    });
+    if (up) up.addEventListener("pointerdown", function () { enterScroll(); scrollStep(-6); });
+    if (dn) dn.addEventListener("pointerdown", function () { if (scrollActive) scrollStep(6); });
+    if (lv) lv.addEventListener("pointerdown", function () { exitScroll(); });
+  })();
+
+  /* Défilement : touche les séquences de molette tmux en écran alterné,
+     sinon le scrollback xterm. */
+  function sendWheel(dir, times) {
+    const t = termObj();
+    if (!t) return;
+    const count = Math.max(1, Math.min(60, times || 1));
+    let alt = false;
+    try { alt = t.buffer && t.buffer.active && t.buffer.active.type === "alternate"; } catch (_) {}
+    if (alt) {
+      const seq = "\x1b[<" + (dir < 0 ? 64 : 65) + ";5;5M";
+      for (let i = 0; i < count; i++) { try { t.input(seq); } catch (_) {} }
+    } else {
+      try { t.scrollLines(dir * 1 * count); } catch (_) {}
+    }
+  }
+
+  function focusTerm() {
+    const ta = termTa();
+    if (!ta) return;
+    try { ta.focus({ preventScroll: true }); } catch (_) { try { ta.focus(); } catch (__) {} }
+  }
+
+  function syncCodeKbHeight() {
+    if (!ck.classList.contains("show")) return;
+    const h = Math.round(ck.getBoundingClientRect().height);
+    if (h > 0) document.documentElement.style.setProperty("--ck-h", h + "px");
+  }
+
+  function openCodeKb() {
+    if (!termTa()) return;
+    exitScroll();
+    enterCodeMode();
+    bar.classList.remove("show");
+    ck.classList.add("show");
+    ck.setAttribute("aria-hidden", "false");
+    mkCode.setAttribute("aria-expanded", "true");
+    document.body.classList.add("mkeys-on", "ck-on");
+    syncCodeKbHeight();
+    setTimeout(syncKeyboardInset, 80);
+    setTimeout(() => { syncKeyboardInset(); syncCodeKbHeight(); }, 320);
+  }
+
+  function closeCodeKb(backToMain) {
+    ck.classList.remove("show");
+    ck.setAttribute("aria-hidden", "true");
+    mkCode.setAttribute("aria-expanded", "false");
+    document.body.classList.remove("ck-on");
+    document.documentElement.style.removeProperty("--ck-h");
+    if (backToMain) {
+      exitCodeMode();
+      bar.classList.add("show");
+      document.body.classList.add("mkeys-on");
+      syncKeyboardInset();
+      setTimeout(focusInput, 30);
+      setTimeout(focusInput, 140);
+    }
+  }
+
+  function blurTerm() {
+    blurInput();
+    try {
+      const ta = termTa();
+      if (ta) {
+        ta.removeAttribute("inputmode");
+        ta.removeAttribute("enterkeyhint");
+        if (ta.blur) ta.blur();
+      }
+      const d = termDoc();
+      const a = d && d.activeElement;
+      if (a && a !== d.body && a.blur) a.blur();
+    } catch (_) {}
+  }
+
+  /* Mode clavier code : garder le textarea focalisé mais empêcher le clavier
+     natif (inputmode=none sur Android). */
+  function enterCodeMode() {
+    blurInput();
+    blurTerm();
+  }
+
+  function exitCodeMode() {
+    focusInput();
+  }
+
+  /* ---- construction du clavier code ---- */
+  const SECTIONS = [
+    ["Contrôle", [
+      { t: "Esc", k: "Escape" }, { t: "Tab", k: "Tab" }, { t: "⇧Tab", k: "Tab", m: { shift: true } },
+      { t: "Ctrl", mod: "ctrl" }, { t: "Alt", mod: "alt" }, { t: "⇧", mod: "shift" },
+      { t: "⌫", k: "Backspace" }, { t: "⏎", k: "Enter", wide: true },
+      { t: "Espace", c: " ", wide: true }
+    ]],
+    ["Raccourcis", [
+      { t: "^C", c: "c", m: { ctrl: true } }, { t: "^D", c: "d", m: { ctrl: true } },
+      { t: "^Z", c: "z", m: { ctrl: true } }, { t: "^L", c: "l", m: { ctrl: true } },
+      { t: "^A", c: "a", m: { ctrl: true } }, { t: "^E", c: "e", m: { ctrl: true } },
+      { t: "^U", c: "u", m: { ctrl: true } }, { t: "^K", c: "k", m: { ctrl: true } },
+      { t: "^R", c: "r", m: { ctrl: true } }, { t: "^W", c: "w", m: { ctrl: true } }
+    ]],
+    ["Défilement", [
+      { t: "⤒ Historique", scroll: -1, wide: true },
+      { t: "⤓ Direct", scroll: 1, wide: true }
+    ]],
+    ["Navigation", [
+      { t: "Home", k: "Home" }, { t: "End", k: "End" }, { t: "PgUp", k: "PageUp" },
+      { t: "PgDn", k: "PageDown" }, { t: "Del", k: "Delete" }, { t: "Ins", k: "Insert" },
+      { t: "↑", k: "ArrowUp" }, { t: "↓", k: "ArrowDown" },
+      { t: "←", k: "ArrowLeft" }, { t: "→", k: "ArrowRight" }
+    ]],
+    ["Symboles", [
+      { t: "`", c: "`" }, { t: "~", c: "~" }, { t: "!", c: "!" }, { t: "@", c: "@" },
+      { t: "#", c: "#" }, { t: "$", c: "$" }, { t: "%", c: "%" }, { t: "^", c: "^" },
+      { t: "&", c: "&" }, { t: "*", c: "*" }, { t: "(", c: "(" }, { t: ")", c: ")" },
+      { t: "-", c: "-" }, { t: "_", c: "_" }, { t: "=", c: "=" }, { t: "+", c: "+" },
+      { t: "[", c: "[" }, { t: "]", c: "]" }, { t: "{", c: "{" }, { t: "}", c: "}" },
+      { t: "\\", c: "\\" }, { t: "|", c: "|" }, { t: ";", c: ";" }, { t: ":", c: ":" },
+      { t: "'", c: "'" }, { t: "\"", c: "\"" }, { t: ",", c: "," }, { t: ".", c: "." },
+      { t: "/", c: "/" }, { t: "?", c: "?" }, { t: "<", c: "<" }, { t: ">", c: ">" }
+    ]],
+    ["Chiffres", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => ({ t: String(n), c: String(n) }))],
+    ["Lettres", "abcdefghijklmnopqrstuvwxyz".split("").map((c) => ({ t: c, c: c }))],
+    ["Fonctions", Array.from({ length: 12 }, (_, i) => ({ t: "F" + (i + 1), k: "F" + (i + 1) }))]
+  ];
+
+  function buildCodeKb() {
+    ckBody.textContent = "";
+    SECTIONS.forEach(([title, keys]) => {
+      const g = document.createElement("div");
+      g.className = "ck-group";
+      g.textContent = title;
+      const row = document.createElement("div");
+      row.className = "ck-row";
+      keys.forEach((spec) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "ck" + (spec.wide ? " wide" : "") + (spec.mod ? " mod" : "") +
+          (spec.c && spec.c.length === 1 && !/[a-zA-Z0-9]/.test(spec.c) ? " sym" : "");
+        b.textContent = spec.t;
+        if (spec.k) b.dataset.key = spec.k;
+        if (spec.c) b.dataset.char = spec.c;
+        if (spec.scroll) b.dataset.scroll = String(spec.scroll);
+        if (spec.m) b.dataset.mods = JSON.stringify(spec.m);
+        if (spec.mod) {
+          b.dataset.mod = spec.mod;
+          b.setAttribute("aria-pressed", "false");
+        }
+        row.appendChild(b);
+      });
+      ckBody.appendChild(g);
+      ckBody.appendChild(row);
+    });
+  }
+  buildCodeKb();
+
+  function act(el) {
+    if (!el) return false;
+    const modBtn = el.dataset.mod;
+    if (modBtn) {
+      tapMod(modBtn);
+      clearTimeout(modHoldTimer);
+      modHoldTimer = setTimeout(function () {
+        if (mods[modBtn] && !modLock[modBtn]) setMod(modBtn, 2);
+      }, 550);
+      return true;
+    }
+    const sc = el.dataset.scroll;
+    if (sc) {
+      const v = Number(sc);
+      if (v < 0) { enterScroll(); scrollStep(-8); }
+      else { exitScroll(); }
+      return true;
+    }
+    const key = el.dataset.key;
+    if (key) {
+      let extra = null;
+      if (el.dataset.mods) { try { extra = JSON.parse(el.dataset.mods); } catch (_) {} }
+      if (el.dataset.shift) extra = Object.assign({}, extra || {}, { shift: true });
+      sendKey(key, extra);
+      consumeMods();
+      return true;
+    }
+    const ch = el.dataset.char;
+    if (ch) {
+      let extra = null;
+      if (el.dataset.mods) { try { extra = JSON.parse(el.dataset.mods); } catch (_) {} }
+      sendChar(ch, extra);
+      consumeMods();
+      return true;
+    }
+    return false;
+  }
+
+  /* ---- garder le focus clavier : agir au pointerdown sans défaut ---- */
+  function wireSurface(surface) {
+    surface.addEventListener("pointerdown", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      if (btn === mkHide) {
+        e.preventDefault();
+        blurTerm();
+        hideBar();
+        return;
+      }
+      if (btn === mkCode) {
+        e.preventDefault();
+        if (ck.classList.contains("show")) closeCodeKb(true);
+        else openCodeKb();
+        return;
+      }
+      if (btn === ckMain) {
+        e.preventDefault();
+        closeCodeKb(true);
+        return;
+      }
+      if (act(btn)) e.preventDefault();
+    }, { passive: false });
+  }
+  wireSurface(bar);
+  wireSurface(ck);
+  [bar, ck].forEach((surface) => {
+    surface.addEventListener("touchstart", (e) => {
+      if (e.target.closest && e.target.closest("button")) e.preventDefault();
+    }, { passive: false });
+  });
+
+  /* ---- apparition quand on touche le terminal ---- */
+  function wireFrame(f) {
+    if (!f || f.__mkWired) return;
+    f.__mkWired = true;
+    const wireDoc = () => {
+      let d = null;
+      try { d = f.contentDocument; } catch (_) { return; }
+      if (!d || d.__mkDocWired) return;
+      d.__mkDocWired = true;
+      d.addEventListener("focusout", () => {
+        setTimeout(() => {
+          if (ck.classList.contains("show")) return;
+          if (mkInput && document.activeElement === mkInput) return;
+          const dd = termDoc();
+          const a = dd && dd.activeElement;
+          if (!dd || !a || a === dd.body || !a.closest || !a.closest(".xterm")) hideBar();
+        }, 380);
+      }, true);
+      const grab = function () {
+        if (!f.classList.contains("active")) return;
+        showBar();
+        focusInput();
+        setTimeout(focusInput, 40);
+      };
+      d.addEventListener("touchstart", grab, { passive: true, capture: true });
+      d.addEventListener("pointerdown", grab, { passive: true, capture: true });
+
+      /* Ctrl/Alt sticky appliqués à la frappe du clavier natif */
+      const nativeMod = function (e) {
+        if (!(mods.ctrl || mods.alt)) return false;
+        let data = e.data;
+        if ((data === null || data === undefined) && e.key && e.key.length === 1) data = e.key;
+        if (!data || data.length !== 1) return false;
+        const m = { ctrl: mods.ctrl, alt: mods.alt, shift: mods.shift };
+        let text;
+        if (m.ctrl) text = String.fromCharCode(data.toUpperCase().charCodeAt(0) & 0x1f);
+        else text = (m.shift && /^[a-z]$/.test(data)) ? data.toUpperCase() : data;
+        if (m.alt) text = "\x1b" + text;
+        const t = termObj();
+        if (t) { try { t.input(text); } catch (_) {} }
+        consumeMods();
+        try { e.preventDefault(); } catch (_) {}
+        return true;
+      };
+      d.addEventListener("beforeinput", nativeMod, true);
+      d.addEventListener("keydown", function (e) {
+        if (e.key && e.key.length === 1) nativeMod(e);
+      }, true);
+
+      /* Défilement à deux doigts (le mono-doigt reste normal : tap, TUI…). */
+      let twoY = null, twoAcc = 0;
+      d.addEventListener("touchstart", function (e) {
+        if (e.touches.length === 2) {
+          twoY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+          twoAcc = 0;
+        }
+      }, { passive: true, capture: true });
+      d.addEventListener("touchmove", function (e) {
+        if (twoY === null || e.touches.length !== 2) return;
+        const y = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        const dy = y - twoY;
+        twoY = y;
+        twoAcc += dy;
+        const n = Math.trunc(twoAcc / 22);
+        if (n !== 0) {
+          twoAcc -= n * 22;
+          enterScroll();
+          scrollStep(n);
+        }
+        if (Math.abs(dy) > 2) { try { e.preventDefault(); } catch (_) {} }
+      }, { passive: false, capture: true });
+      d.addEventListener("touchend", function (e) {
+        if (e.touches.length < 2) { twoY = null; twoAcc = 0; }
+      }, { passive: true, capture: true });
+
+    };
+    f.addEventListener("load", () => {
+      if (!f.getAttribute("src") || f.getAttribute("src") === "about:blank") { hideBar(); return; }
+      wireDoc();
+    });
+    wireDoc();
+  }
+  document.querySelectorAll("#termwrap iframe").forEach(wireFrame);
+
+  /* masquer quand on touche ailleurs (le terminal est dans une iframe,
+     ses taps ne remontent pas) */
+  document.addEventListener("pointerdown", (e) => {
+    if (!bar.classList.contains("show")) return;
+    if (e.target.closest && e.target.closest("#mkeys,#codekb,#termwrap")) return;
+    hideBar();
+  }, true);
+
+  /* Frappe du clavier natif : on écoute un input caché dans la page (focus fiable). */
+  function nativeInput(e) {
+    if (e.type === "beforeinput") {
+      if (e.inputType === "deleteContentBackward") {
+        e.preventDefault(); sendKey("Backspace"); consumeMods();
+        try { mkInput.value = ""; } catch (_) {}
+        return;
+      }
+      if (e.data && e.data.length === 1) {
+        e.preventDefault(); sendChar(e.data); consumeMods();
+        try { mkInput.value = ""; } catch (_) {}
+        return;
+      }
+      return;
+    }
+    const map = {
+      Enter: "Enter", Backspace: "Backspace", Tab: "Tab", Escape: "Escape",
+      Delete: "Delete", ArrowUp: "ArrowUp", ArrowDown: "ArrowDown",
+      ArrowLeft: "ArrowLeft", ArrowRight: "ArrowRight",
+      Home: "Home", End: "End", PageUp: "PageUp", PageDown: "PageDown"
+    };
+    const k = e.key;
+    if (map[k]) {
+      e.preventDefault();
+      sendKey(map[k]);
+      consumeMods();
+      try { mkInput.value = ""; } catch (_) {}
+    }
+  }
+  if (mkInput) {
+    mkInput.addEventListener("beforeinput", nativeInput, true);
+    mkInput.addEventListener("keydown", nativeInput, true);
+    mkInput.addEventListener("input", function () {
+      const v = mkInput.value;
+      if (v) {
+        for (let i = 0; i < v.length; i++) sendChar(v.charAt(i));
+        consumeMods();
+      }
+      mkInput.value = "";
+    });
+    document.addEventListener("pointerup", function () { clearTimeout(modHoldTimer); }, true);
+    document.addEventListener("pointercancel", function () { clearTimeout(modHoldTimer); }, true);
+  }
+
+  try { window.__marexKeysHide = hideBar; } catch (_) {}
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && ck.classList.contains("show")) {
+      closeCodeKb(true);
+    }
+  });
+
+  /* verrouillage / arrêt des panneaux → barre cachée */
+  try {
+    const origStop = stopPanes;
+    stopPanes = function () { hideBar(); return origStop.apply(this, arguments); };
+  } catch (_) {}
+})();
+
+applyTheme(currentTheme());
+syncSettingsUI();
+
+initGate();
+</script>
+</body>
+</html>

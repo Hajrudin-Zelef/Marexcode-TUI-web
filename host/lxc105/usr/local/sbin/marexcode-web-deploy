@@ -1,0 +1,9 @@
+#!/bin/sh
+# Deploy/refresh the Marexcode page security headers (CSP hashes + nginx reload).
+set -e
+PAGE="${1:-/var/www/marexcode-web/index.html}"
+python3 /usr/local/sbin/marexcode-csp.py "$PAGE" > /etc/nginx/snippets/marexcode-csp.conf
+chmod 644 /etc/nginx/snippets/marexcode-csp.conf
+nginx -t
+systemctl reload nginx
+echo "CSP régénérée pour $PAGE ; nginx rechargé."

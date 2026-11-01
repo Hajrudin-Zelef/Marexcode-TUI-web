@@ -1,0 +1,17 @@
+[Unit]
+Description=Terminal web ttyd — session tmux %i (loopback 127.0.0.1:768%i)
+After=network.target
+
+[Service]
+User=sam
+Group=sam
+WorkingDirectory=/home/sam
+Environment=TERM=xterm-256color
+Environment=COLORTERM=truecolor
+ExecStart=/bin/sh -c 'exec /usr/local/bin/ttyd -W -O -i 127.0.0.1 -p "$((7680 + %i))" --base-path "/terminal/%i" -H X-Remote-User -t "titleFixed=Session %i" /usr/local/bin/marex-tmux %i'
+KillMode=process
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

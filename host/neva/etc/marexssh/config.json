@@ -1,0 +1,26 @@
+{
+  "admins": [
+    "admin@example.com"
+  ],
+  "allowed_cidrs": [
+    "100.64.0.0/10",
+    "10.0.0.0/24",
+    "192.168.1.0/24"
+  ],
+  "allowed_ports": [
+    22,
+    2222
+  ],
+  "idle_timeout_min": 15,
+  "max_session_min": 480,
+  "max_sessions": 3,
+  "max_sessions_per_login": 6,
+  "ticket_ttl_sec": 60,
+  "ready_timeout_sec": 25,
+  "sftp": {
+    "max_bytes": 2147483648,
+    "preview_bytes": 262144,
+    "concurrent": 2,
+    "max_entries": 2000
+  }
+}

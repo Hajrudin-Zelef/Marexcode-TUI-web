@@ -1,0 +1,8 @@
+[Unit]
+Description=Garde-fou tailnet → 10.0.0.102:22
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/marex-tailnet-guard

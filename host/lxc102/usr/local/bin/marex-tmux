@@ -1,0 +1,13 @@
+#!/bin/sh
+# Attache (ou crée) la session tmux marex-N sans barre de statut.
+# Utilisé par ttyd-marexcode@.service ; une session par onglet, persistante.
+# mouse on : permet le défilement (molette / glisser tactile) via tmux copy-mode.
+set -e
+N="${1:?numéro de session}"
+S="marex-$N"
+if ! tmux has-session -t "$S" 2>/dev/null; then
+  tmux new-session -d -s "$S" -c /home/sam
+fi
+tmux set-option -t "$S" status off
+tmux set-option -t "$S" mouse on
+exec tmux attach-session -t "$S"

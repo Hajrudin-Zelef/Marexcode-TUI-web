@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /home/sam/.bun/bin/bun /home/sam/marexcode/dist/marex-tui.js "$@"

@@ -1,0 +1,34 @@
+[Unit]
+Description=Marexcode master gate (loopback 127.0.0.1:8789)
+After=network.target
+
+[Service]
+Type=simple
+User=marexgate
+Group=marexgate
+WorkingDirectory=/opt/marexgate
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node /opt/marexgate/server.js
+Restart=always
+RestartSec=2
+StateDirectory=marexgate
+StateDirectoryMode=0750
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryMax=256M
+TasksMax=64
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target

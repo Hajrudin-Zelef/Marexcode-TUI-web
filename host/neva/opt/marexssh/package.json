@@ -1,0 +1,1 @@
+{ "name": "marexssh", "private": true, "version": "0.1.0", "dependencies": { "ssh2": "^1.16.0", "ws": "^8.18.0" } }

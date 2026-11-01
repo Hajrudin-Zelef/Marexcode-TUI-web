@@ -1,0 +1,35 @@
+[Unit]
+Description=marexssh — proxy SSH/WebSocket pour Marexcode Web (loopback 8791)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=marexssh
+Group=marexssh
+WorkingDirectory=/opt/marexssh
+Environment=NODE_ENV=production
+ExecStart=/opt/marexssh/bin/node /opt/marexssh/server.js
+Restart=always
+RestartSec=2
+StateDirectory=marexssh
+StateDirectoryMode=0750
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryMax=256M
+TasksMax=128
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target

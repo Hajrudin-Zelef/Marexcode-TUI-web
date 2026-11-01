@@ -1,0 +1,9 @@
+#!/bin/sh
+# Empêche les pairs du tailnet d'atteindre directement sshd sur le LXC 102.
+# L'administration depuis PVE (10.0.0.1) reste possible (interface vmbr1).
+set -e
+IPT=/usr/sbin/iptables
+RULE="-i tailscale0 -d 10.0.0.102/32 -p tcp --dport 22 -j DROP"
+if ! $IPT -C FORWARD $RULE 2>/dev/null; then
+  $IPT -I FORWARD 1 $RULE
+fi

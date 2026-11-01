@@ -1,0 +1,35 @@
+[Unit]
+Description=Marexcode gate-aware WebSocket proxy for ttyd (127.0.0.1:7691-7694)
+After=network.target marexgate.service
+Wants=marexgate.service
+
+[Service]
+Type=simple
+User=marexgate
+Group=marexgate
+WorkingDirectory=/opt/marexgate
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node /opt/marexgate/marexws.js
+Restart=always
+RestartSec=2
+StateDirectory=marexgate
+StateDirectoryMode=0750
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryMax=192M
+TasksMax=256
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target
